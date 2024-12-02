@@ -87,7 +87,7 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
 Widget androidWebView(
     BuildContext context, AsyncSnapshot<bool> snapshot, List<String> history) {
   return PopScope(
-    onPopInvoked: (didPop) async {
+    onPopInvokedWithResult: (didPop, result) async {
       if (history.length > 1) {
         ioscontroller!.loadRequest(
             LoadRequestParams(uri: Uri.parse(history[history.length - 2])));

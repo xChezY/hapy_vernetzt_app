@@ -25,7 +25,7 @@ WebviewCookieManager cookiemanager = WebviewCookieManager();
 
 FlutterSecureStorage storage = const FlutterSecureStorage();
 
-String starturl = 'https://hapy-vernetzt.de/cms';
+String starturl = 'https://hapy-vernetzt.de/signup/';
 
 int id = 0;
 
