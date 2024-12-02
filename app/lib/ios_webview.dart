@@ -2,10 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:hapy_vernetzt_app/ios_appbar.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 
@@ -21,10 +19,8 @@ class IOSWebViewPage extends StatefulWidget {
 }
 
 class _IOSWebViewPageState extends State<IOSWebViewPage> {
-
-  final ValueNotifier<bool> _canGoBack = ValueNotifier<bool>(false);
-
-  final List<String> _history = <String>[]; 
+  String _previousurl = '';
+  final ValueNotifier<int> _progress = ValueNotifier<int>(0);
 
   @override
   initState() {
@@ -74,11 +70,38 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
 
     ioscontroller!.setPlatformNavigationDelegate(WebKitNavigationDelegate(
       const WebKitNavigationDelegateCreationParams(),
-    )..setOnPageFinished(
+    )
+      ..setOnProgress((int progress) {
+        _progress.value = progress;
+      })
+      ..setOnPageFinished(
         (url) async {
-          if (_history.isNotEmpty &&
-              _history[_history.length - 1] ==
-                  'https://hapy-vernetzt.de/login/') {
+          String removebanner = '''
+                                  const banner = document.querySelector('.footer-icon-frame');
+                                  if (banner) {
+                                    banner.remove();
+                                  }
+                                ''';
+          ioscontroller!.runJavaScript(removebanner);
+          if (url != 'https://hapy-vernetzt.de/dashboard/' &&
+              url != 'https://hapy-vernetzt.de/login/' &&
+              url != 'https://hapy-vernetzt.de/signup/' &&
+              url != 'https://hapy-vernetzt.de/logout/' &&
+              url != 'https://hapy-vernetzt.de/password_reset/') {
+            String jscode = '''
+                              var element = document.querySelector('div.nav-section.nav-brand');
+                              if (element) {
+                                const arrowLink = document.createElement('a');
+                                arrowLink.href = 'javascript:window.history.back();';
+                                arrowLink.classList.add('nav-button');    
+                                arrowLink.innerHTML = `<i class="fas fa-chevron-left"></i>`;
+                                element.prepend(arrowLink);
+                              }
+                            ''';
+            ioscontroller!.clearCache();
+            ioscontroller!.runJavaScript(jscode);
+          }
+          if (_previousurl == 'https://hapy-vernetzt.de/login/' && url == 'https://hapy-vernetzt.de/dashboard/') {
             List<Cookie> cookies = await cookiemanager
                 .getCookies('https://hapy-vernetzt.de/dashboard/');
             for (Cookie cookie in cookies) {
@@ -90,13 +113,7 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
           if (url == 'https://hapy-vernetzt.de/logout/') {
             await storage.delete(key: 'sessionid');
           }
-          if (_history.isEmpty || _history[_history.length - 1] != url) {
-            if (url == 'https://hapy-vernetzt.de/dashboard/') {
-              _history.clear();
-            }
-            _history.add(url);
-          }
-          _canGoBack.value = _history.length > 1;
+          _previousurl = url;
         },
       ));
 
@@ -110,34 +127,53 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
       home: FutureBuilder(
           future: _iOSControllerFuture(),
           builder: (context, snapshot) {
-            return iOSWebView(context, _canGoBack, snapshot, _history);
+            return iOSWebView(context, _progress, snapshot);
           }),
     );
   }
 }
 
-Widget iOSWebView(BuildContext context, ValueListenable<bool> canGoBack,
-    AsyncSnapshot<bool> snapshot, List<String> history) {
+Widget iOSWebView(BuildContext context, ValueNotifier<int> progress, AsyncSnapshot<bool> snapshot) {
   return CupertinoPageScaffold(
     backgroundColor: Colors.white,
-    navigationBar: snapshot.connectionState == ConnectionState.done
-        ? iOSAppBar(context, canGoBack, history)
-        : null,
-    child: Container(
-        decoration: const BoxDecoration(
-          border: Border(
-              bottom: BorderSide(
-            color: Colors.white,
-            width: 30.0,
-          )),
-        ),
-        child: snapshot.connectionState == ConnectionState.done
-            ? WebKitWebViewWidget(WebKitWebViewWidgetCreationParams(
-                    controller: ioscontroller!))
-                .build(context)
-            : const Center(
-                child: CupertinoActivityIndicator(
-                color: Color.fromRGBO(47, 133, 90, 1),
-              ))),
+    child: SafeArea(
+      child: Column(
+        children: [
+          ValueListenableBuilder(
+              valueListenable: progress,
+              builder: (context, progress, child) {
+                if (progress == 100) {
+                  return const SizedBox(height: 0);
+                }
+                return LinearProgressIndicator(
+                  value: progress / 100,
+                  backgroundColor: Colors.grey[200],
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                      Color.fromRGBO(47, 133, 90, 1)),
+                );
+              }),
+          Expanded(
+            child: ValueListenableBuilder(
+              valueListenable: progress,
+              builder: (context, value, child) {
+                if (snapshot.connectionState == ConnectionState.done) {
+                  return value == 100 || (value <= 50 && value >= 1) ? WebKitWebViewWidget(WebKitWebViewWidgetCreationParams(
+                            controller: ioscontroller!))
+                        .build(context) :
+                        const Center(
+                        child: CupertinoActivityIndicator(
+                        color: Color.fromRGBO(47, 133, 90, 1),
+                      ));
+                }
+                return const Center(
+                        child: CupertinoActivityIndicator(
+                        color: Color.fromRGBO(47, 133, 90, 1),
+                      ));
+              }
+            ),
+          ),
+        ],
+      ),
+    ),
   );
 }
