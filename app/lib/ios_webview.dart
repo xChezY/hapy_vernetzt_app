@@ -1,8 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 
@@ -86,9 +86,11 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
           }
           if (_previousurl == 'https://hapy-vernetzt.de/login/' &&
               url == 'https://hapy-vernetzt.de/dashboard/') {
-            Map<String, String> cookies = await getCookies(ioscontroller!);
-            if (cookies.containsKey('hameln-sessionid')) {
-              await storage.write(key: 'sessionid', value: cookies['hameln-sessionid']);
+            List<Cookie> cookies = await cookieManager.getCookies(url);
+            for (Cookie cookie in cookies) {
+              if (cookie.name == 'hameln-sessionid') {
+                await storage.write(key: 'sessionid', value: cookie.value);
+              }
             }
           }
           if (url == 'https://hapy-vernetzt.de/logout/') {
