@@ -1,8 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:hapy_vernetzt_app/main.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import 'package:http/http.dart' as http;
@@ -72,14 +72,15 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
                                 element.prepend(arrowLink);
                               }
                             ''';
-            androidcontroller!.clearCache();
             androidcontroller!.runJavaScript(jscode);
           }
           if (_previousurl == 'https://hapy-vernetzt.de/login/' &&
               url == 'https://hapy-vernetzt.de/dashboard/') {
-            Map<String, String> cookies = await getCookies(androidcontroller!);
-            if (cookies.containsKey('hameln-sessionid')) {
-              await storage.write(key: 'sessionid', value: cookies['hameln-sessionid']);
+            List<Cookie> cookies = await cookieManager.getCookies(url);
+            for (Cookie cookie in cookies) {
+              if (cookie.name == 'hameln-sessionid') {
+                await storage.write(key: 'sessionid', value: cookie.value);
+              }
             }
           }
           if (url == 'https://hapy-vernetzt.de/logout/') {
