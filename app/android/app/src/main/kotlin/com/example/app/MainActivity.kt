@@ -1,4 +1,4 @@
-package com.example.hapy_vernetzt_app
+package com.example.app
 
 import io.flutter.embedding.android.FlutterActivity
 

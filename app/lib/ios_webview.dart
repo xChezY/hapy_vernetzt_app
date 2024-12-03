@@ -1,9 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 
@@ -23,25 +22,9 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
   final ValueNotifier<int> _progress = ValueNotifier<int>(0);
 
   @override
-  initState() {
-    super.initState();
-    _requestIOSPermissions();
-  }
-
-  @override
   void dispose() {
     super.dispose();
     selectnotificationstream.close();
-  }
-
-  Future<void> _requestIOSPermissions() async {
-    await flutterlocalnotificationsplugin
-        .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(
-          alert: true,
-          sound: true,
-        );
   }
 
   Future<bool> _iOSControllerFuture() async {
@@ -101,13 +84,11 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
             ioscontroller!.clearCache();
             ioscontroller!.runJavaScript(jscode);
           }
-          if (_previousurl == 'https://hapy-vernetzt.de/login/' && url == 'https://hapy-vernetzt.de/dashboard/') {
-            List<Cookie> cookies = await cookiemanager
-                .getCookies('https://hapy-vernetzt.de/dashboard/');
-            for (Cookie cookie in cookies) {
-              if (cookie.name == 'hameln-sessionid') {
-                await storage.write(key: 'sessionid', value: cookie.value);
-              }
+          if (_previousurl == 'https://hapy-vernetzt.de/login/' &&
+              url == 'https://hapy-vernetzt.de/dashboard/') {
+            Map<String, String> cookies = await getCookies(ioscontroller!);
+            if (cookies.containsKey('hameln-sessionid')) {
+              await storage.write(key: 'sessionid', value: cookies['hameln-sessionid']);
             }
           }
           if (url == 'https://hapy-vernetzt.de/logout/') {
@@ -133,7 +114,8 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
   }
 }
 
-Widget iOSWebView(BuildContext context, ValueNotifier<int> progress, AsyncSnapshot<bool> snapshot) {
+Widget iOSWebView(BuildContext context, ValueNotifier<int> progress,
+    AsyncSnapshot<bool> snapshot) {
   return CupertinoPageScaffold(
     backgroundColor: Colors.white,
     child: SafeArea(
@@ -154,23 +136,23 @@ Widget iOSWebView(BuildContext context, ValueNotifier<int> progress, AsyncSnapsh
               }),
           Expanded(
             child: ValueListenableBuilder(
-              valueListenable: progress,
-              builder: (context, value, child) {
-                if (snapshot.connectionState == ConnectionState.done) {
-                  return value == 100 || (value <= 50 && value >= 1) ? WebKitWebViewWidget(WebKitWebViewWidgetCreationParams(
-                            controller: ioscontroller!))
-                        .build(context) :
-                        const Center(
-                        child: CupertinoActivityIndicator(
-                        color: Color.fromRGBO(47, 133, 90, 1),
-                      ));
-                }
-                return const Center(
-                        child: CupertinoActivityIndicator(
-                        color: Color.fromRGBO(47, 133, 90, 1),
-                      ));
-              }
-            ),
+                valueListenable: progress,
+                builder: (context, value, child) {
+                  if (snapshot.connectionState == ConnectionState.done) {
+                    return value == 100 || (value <= 50 && value >= 1)
+                        ? WebKitWebViewWidget(WebKitWebViewWidgetCreationParams(
+                                controller: ioscontroller!))
+                            .build(context)
+                        : const Center(
+                            child: CupertinoActivityIndicator(
+                            color: Color.fromRGBO(47, 133, 90, 1),
+                          ));
+                  }
+                  return const Center(
+                      child: CupertinoActivityIndicator(
+                    color: Color.fromRGBO(47, 133, 90, 1),
+                  ));
+                }),
           ),
         ],
       ),

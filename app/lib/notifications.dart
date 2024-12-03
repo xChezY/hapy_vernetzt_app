@@ -82,13 +82,6 @@ void showNotification() async {
   }
 }
 
-Future<void> repeatNotification() async {
-  const Duration duration = Duration(minutes: 15);
-  Timer.periodic(duration, (Timer timer) async {
-    showNotification();
-  });
-}
-
 void initializeNotifications() async {
   final InitializationSettings initializationsettings = InitializationSettings(
     iOS: initialiseIOSNotification(),
