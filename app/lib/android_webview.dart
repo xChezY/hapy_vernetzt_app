@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:hapy_vernetzt_app/main.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import 'package:http/http.dart' as http;
@@ -16,7 +16,8 @@ class AndroidWebViewPage extends StatefulWidget {
 }
 
 class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
-  final List<String> _history = <String>[];
+  String _previousurl = '';
+  final ValueNotifier<int> _progress = ValueNotifier<int>(0);
 
   Future<bool> _androidControllerFuture() async {
     String? sessionid = await storage.read(key: 'sessionid');
@@ -43,28 +44,48 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
 
     androidcontroller!.setPlatformNavigationDelegate(AndroidNavigationDelegate(
       const PlatformNavigationDelegateCreationParams(),
-    )..setOnPageFinished(
+    )
+      ..setOnProgress((int progress) {
+        _progress.value = progress;
+      })
+      ..setOnPageFinished(
         (url) async {
-          if (_history.isNotEmpty &&
-              _history[_history.length - 1] ==
-                  'https://hapy-vernetzt.de/login/') {
-            List<Cookie> cookies = await cookiemanager
-                .getCookies('https://hapy-vernetzt.de/dashboard/');
-            for (Cookie cookie in cookies) {
-              if (cookie.name == 'hameln-sessionid') {
-                await storage.write(key: 'sessionid', value: cookie.value);
-              }
+          String removebanner = '''
+                                  const banner = document.querySelector('.footer-icon-frame');
+                                  if (banner) {
+                                    banner.remove();
+                                  }
+                                ''';
+          androidcontroller!.runJavaScript(removebanner);
+          if (url != 'https://hapy-vernetzt.de/dashboard/' &&
+              url != 'https://hapy-vernetzt.de/login/' &&
+              url != 'https://hapy-vernetzt.de/signup/' &&
+              url != 'https://hapy-vernetzt.de/logout/' &&
+              url != 'https://hapy-vernetzt.de/password_reset/') {
+            String jscode = '''
+                              var element = document.querySelector('div.nav-section.nav-brand');
+                              if (element) {
+                                const arrowLink = document.createElement('a');
+                                arrowLink.href = 'javascript:window.history.back();';
+                                arrowLink.classList.add('nav-button');    
+                                arrowLink.innerHTML = `<i class="fas fa-chevron-left"></i>`;
+                                element.prepend(arrowLink);
+                              }
+                            ''';
+            androidcontroller!.clearCache();
+            androidcontroller!.runJavaScript(jscode);
+          }
+          if (_previousurl == 'https://hapy-vernetzt.de/login/' &&
+              url == 'https://hapy-vernetzt.de/dashboard/') {
+            Map<String, String> cookies = await getCookies(androidcontroller!);
+            if (cookies.containsKey('hameln-sessionid')) {
+              await storage.write(key: 'sessionid', value: cookies['hameln-sessionid']);
             }
           }
           if (url == 'https://hapy-vernetzt.de/logout/') {
             await storage.delete(key: 'sessionid');
           }
-          if (_history.isEmpty || _history[_history.length - 1] != url) {
-            if (url == 'https://hapy-vernetzt.de/dashboard/') {
-              _history.clear();
-            }
-            _history.add(url);
-          }
+          _previousurl = url;
         },
       ));
 
@@ -78,36 +99,67 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
       home: FutureBuilder(
           future: _androidControllerFuture(),
           builder: (context, snapshot) {
-            return androidWebView(context, snapshot, _history);
+            return androidWebView(context, _progress, snapshot, _previousurl);
           }),
     );
   }
 }
 
-Widget androidWebView(
-    BuildContext context, AsyncSnapshot<bool> snapshot, List<String> history) {
+Widget androidWebView(BuildContext context, ValueNotifier<int> progress,
+    AsyncSnapshot<bool> snapshot, String previousurl) {
   return PopScope(
     onPopInvokedWithResult: (didPop, result) async {
-      if (history.length > 1) {
-        ioscontroller!.loadRequest(
-            LoadRequestParams(uri: Uri.parse(history[history.length - 2])));
-        history.removeLast();
+      if (previousurl != 'https://hapy-vernetzt.de/dashboard/' &&
+          previousurl != 'https://hapy-vernetzt.de/login/' &&
+          previousurl != 'https://hapy-vernetzt.de/signup/' &&
+          previousurl != 'https://hapy-vernetzt.de/logout/' &&
+          previousurl != 'https://hapy-vernetzt.de/password_reset/') {
+        androidcontroller!.goBack();
       }
     },
     canPop: false,
     child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          toolbarHeight: 25,
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            ValueListenableBuilder(
+                valueListenable: progress,
+                builder: (context, progress, child) {
+                  if (progress == 100) {
+                    return const SizedBox(height: 0);
+                  }
+                  return LinearProgressIndicator(
+                    value: progress / 100,
+                    backgroundColor: Colors.grey[200],
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                        Color.fromRGBO(47, 133, 90, 1)),
+                  );
+                }),
+            Expanded(
+              child: ValueListenableBuilder(
+                  valueListenable: progress,
+                  builder: (context, value, child) {
+                    if (snapshot.connectionState == ConnectionState.done) {
+                      return value == 100 || (value <= 50 && value >= 1)
+                          ? AndroidWebViewWidget(
+                                  AndroidWebViewWidgetCreationParams(
+                                      controller: androidcontroller!))
+                              .build(context)
+                          : const Center(
+                              child: CircularProgressIndicator(
+                              color: Color.fromRGBO(47, 133, 90, 1),
+                            ));
+                    }
+                    return const Center(
+                        child: CircularProgressIndicator(
+                      color: Color.fromRGBO(47, 133, 90, 1),
+                    ));
+                  }),
+            ),
+          ],
         ),
-        body: snapshot.connectionState == ConnectionState.done
-            ? AndroidWebViewWidget(AndroidWebViewWidgetCreationParams(
-                    controller: androidcontroller!))
-                .build(context)
-            : const Center(
-                child: CircularProgressIndicator(
-                color: Color.fromRGBO(47, 133, 90, 1),
-              ))),
+      ),
+    ),
   );
 }
