@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:hapy_vernetzt_app/android_notification.dart';
 import 'package:hapy_vernetzt_app/ios_notification.dart';
@@ -60,14 +61,17 @@ void showNotification() async {
     if (notificationid == -1) {
       notificationid = id++;
     }
+    debugPrint('notificationid: $notificationid');
     await flutterlocalnotificationsplugin.show(
       notificationid,
       "Keine Benachrichtigungen",
       "Du bist wieder abgemeldet worden. Melde dich jetzt wieder an, um weiterhin Benachrichtigungen zu erhalten.",
-      const NotificationDetails(),
+      NotificationDetails(
+        android: initialiseAndroidNotificationDetails(),
+      ),
     );
     return;
-  }else{
+  } else {
     notificationid = -1;
   }
   List<HapyAlerts> alerts = await getHapyAlerts(sessionid);
@@ -76,7 +80,9 @@ void showNotification() async {
       id++,
       alert.group,
       alert.text.replaceAll("<b>", "").replaceAll("</b>", ""),
-      const NotificationDetails(),
+      NotificationDetails(
+        android: initialiseAndroidNotificationDetails(),
+      ),
       payload: alert.url,
     );
   }
