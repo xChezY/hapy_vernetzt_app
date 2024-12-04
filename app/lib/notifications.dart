@@ -69,6 +69,7 @@ void showNotification() async {
       NotificationDetails(
         android: initialiseAndroidNotificationDetails(),
       ),
+      payload: '/login/',
     );
     return;
   } else {
@@ -112,6 +113,7 @@ Future<void> onDidReceiveNotificationResponse(
     NotificationResponse notificationResponse) async {
   final String? payload = notificationResponse.payload;
   if (notificationResponse.payload != null) {
+    dontgoback = true;
     if (Platform.isIOS) {
       await ioscontroller!.loadRequest(LoadRequestParams(
           uri: Uri.parse("https://hapy-vernetzt.de${payload!}")));

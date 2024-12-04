@@ -57,11 +57,7 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
                                   }
                                 ''';
           androidcontroller!.runJavaScript(removebanner);
-          if (url != 'https://hapy-vernetzt.de/dashboard/' &&
-              url != 'https://hapy-vernetzt.de/login/' &&
-              url != 'https://hapy-vernetzt.de/signup/' &&
-              url != 'https://hapy-vernetzt.de/logout/' &&
-              url != 'https://hapy-vernetzt.de/password_reset/') {
+          if (canGoBack(url)) {
             String jscode = '''
                               var element = document.querySelector('div.nav-section.nav-brand');
                               if (element) {
@@ -110,11 +106,7 @@ Widget androidWebView(BuildContext context, ValueNotifier<int> progress,
     AsyncSnapshot<bool> snapshot, String previousurl) {
   return PopScope(
     onPopInvokedWithResult: (didPop, result) async {
-      if (previousurl != 'https://hapy-vernetzt.de/dashboard/' &&
-          previousurl != 'https://hapy-vernetzt.de/login/' &&
-          previousurl != 'https://hapy-vernetzt.de/signup/' &&
-          previousurl != 'https://hapy-vernetzt.de/logout/' &&
-          previousurl != 'https://hapy-vernetzt.de/password_reset/') {
+      if (canGoBack(previousurl)) {
         androidcontroller!.goBack();
       }
     },
