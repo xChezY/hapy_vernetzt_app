@@ -4,14 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\FCMToken;
 use Illuminate\Http\Request;
-use Kreait\Firebase\Exception\Auth\FailedToVerifyToken;
+use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Firebase\Factory;
 
 class FCMController extends Controller
 {
     public function sendDeviceToken(Request $request){
-
-        $auth = (new Factory)->withServiceAccount(base_path() . '/hapy-vernetzt-firebase-adminsdk-leon.json')->createAuth();
 
         $request->validate([
             'token' => 'required|string'
@@ -21,13 +19,21 @@ class FCMController extends Controller
             $fcmtoken = new FCMToken([
                 'token' => $request->token
             ]);
-            try{
-                $auth->verifyIdToken($fcmtoken);
-                $fcmtoken->save();
-            }catch(FailedToVerifyToken $e){
-                return response()->json(['message' => 'Invalid token: '.$e->getMessage()]);
-            }
+            $fcmtoken->save();
         }
         return response()->json(['message' => 'Device token updated successfully']);
     }
+
+    public function sendMessage(Request $request) {
+
+        $factory = (new Factory)->withServiceAccount(base_path() . '/hapy-vernetzt-app-firebase-adminsdk.json');
+
+        $messaging = $factory->createMessaging();
+        $tokens = FCMToken::getAllTokens();
+        $message = CloudMessage::new();
+        $messaging->sendMulticast($message, $tokens);
+
+        return response()->json(['message' => 'Messages sent successfully']);
+    }
+
 }

@@ -89,7 +89,7 @@ void showNotification() async {
   }
 }
 
-void initializeNotifications() async {
+void initNotifications() async {
   final InitializationSettings initializationsettings = InitializationSettings(
     iOS: initialiseIOSNotification(),
     android: initialiseAndroidNotification(),
