@@ -14,4 +14,5 @@ Route::get('/clear', function () {
     return Response()->json(['message' => 'All tokens were deleted']);
 });
 
+//Das sollte später entfernt werden
 Route::get('/send-message', [FCMController::class, 'sendMessage']);
