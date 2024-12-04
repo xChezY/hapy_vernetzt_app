@@ -24,14 +24,18 @@ class FCMController extends Controller
         return response()->json(['message' => 'Device token updated successfully']);
     }
 
-    public function sendMessage(Request $request) {
+    public function sendMessage() {
 
         $factory = (new Factory)->withServiceAccount(base_path() . '/hapy-vernetzt-app-firebase-adminsdk.json');
 
         $messaging = $factory->createMessaging();
         $tokens = FCMToken::getAllTokens();
         $message = CloudMessage::new();
-        $messaging->sendMulticast($message, $tokens);
+        $report = $messaging->sendMulticast($message, $tokens);
+
+        foreach($report->invalidTokens() as $invalidtoken){
+            FCMToken::removeToken($invalidtoken);
+        }
 
         return response()->json(['message' => 'Messages sent successfully']);
     }

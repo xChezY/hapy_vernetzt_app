@@ -18,6 +18,11 @@ class FCMToken extends Model
         return self::all()->pluck('token')->toArray();
     }
 
+    public static function removeToken($token)
+    {
+        return self::where('token', $token)->delete();
+    }
+
     public function toString()
     {
         return $this->token;
