@@ -41,8 +41,8 @@ int notificationid = -1;
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  initNotifications();
   showNotification();
-  debugPrint('Handling a background message');
 }
 
 bool canGoBack(String url){
@@ -72,7 +72,6 @@ Future<void> main() async {
   initNotifications();
 
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    debugPrint('Message data: ${message.data}');
     showNotification();
   });
 
