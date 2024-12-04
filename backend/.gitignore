@@ -19,5 +19,4 @@ yarn-error.log
 /.idea
 /.vscode
 
-firebase-auth.json
-hapy-vernetzt-firebase-adminsdk-leon.json
+hapy-vernetzt-app-firebase-adminsdk.json
