@@ -1,10 +1,8 @@
 import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:hapy_vernetzt_app/main.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/http.dart';
 
 void initToken() async {
   String token = '';
