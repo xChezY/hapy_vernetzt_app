@@ -7,10 +7,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class FCMToken extends Model
 {
-
     use HasFactory;
 
     public $timestamps = false;
     protected $table = 'fcmtoken';
     protected $fillable = ['token'];
+
+    public static function getAllTokens()
+    {
+        return self::all()->pluck('token')->toArray();
+    }
+
+    public function toString()
+    {
+        return $this->token;
+    }
 }

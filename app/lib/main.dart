@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hapy_vernetzt_app/android_webview.dart';
+import 'package:hapy_vernetzt_app/firebase.dart';
 import 'package:hapy_vernetzt_app/firebase_options.dart';
 import 'package:hapy_vernetzt_app/notifications.dart';
 import 'package:hapy_vernetzt_app/ios_webview.dart';
@@ -65,7 +66,10 @@ Future<void> main() async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  initializeNotifications();
+  initToken();
+  initOnTokenRefresh();
+
+  initNotifications();
 
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
     debugPrint('Message data: ${message.data}');
