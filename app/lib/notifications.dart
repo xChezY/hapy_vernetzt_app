@@ -61,13 +61,12 @@ void showNotification() async {
     if (notificationid == -1) {
       notificationid = id++;
     }
-    debugPrint('notificationid: $notificationid');
     await flutterlocalnotificationsplugin.show(
       notificationid,
       "Keine Benachrichtigungen",
       "Du bist wieder abgemeldet worden. Melde dich jetzt wieder an, um weiterhin Benachrichtigungen zu erhalten.",
       NotificationDetails(
-        android: initialiseAndroidNotificationDetails(),
+        android: initialiseAndroidNotificationDetails(true),
       ),
       payload: '/login/',
     );
@@ -82,7 +81,7 @@ void showNotification() async {
       alert.group,
       alert.text.replaceAll("<b>", "").replaceAll("</b>", ""),
       NotificationDetails(
-        android: initialiseAndroidNotificationDetails(),
+        android: initialiseAndroidNotificationDetails(false),
       ),
       payload: alert.url,
     );
