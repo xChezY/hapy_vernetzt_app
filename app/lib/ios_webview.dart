@@ -66,11 +66,7 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
                                   }
                                 ''';
           ioscontroller!.runJavaScript(removebanner);
-          if (url != 'https://hapy-vernetzt.de/dashboard/' &&
-              url != 'https://hapy-vernetzt.de/login/' &&
-              url != 'https://hapy-vernetzt.de/signup/' &&
-              url != 'https://hapy-vernetzt.de/logout/' &&
-              url != 'https://hapy-vernetzt.de/password_reset/') {
+          if (canGoBack(url)) {
             String jscode = '''
                               var element = document.querySelector('div.nav-section.nav-brand');
                               if (element) {
