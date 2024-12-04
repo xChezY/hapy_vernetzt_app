@@ -29,7 +29,7 @@ AndroidWebViewController? androidcontroller;
 
 FlutterSecureStorage storage = const FlutterSecureStorage();
 
-bool isFlutterLocalNotificationsInitialized = false;
+bool dontgoback = false;
 
 String starturl = 'https://hapy-vernetzt.de/signup/';
 
@@ -40,9 +40,23 @@ int notificationid = -1;
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  initializeNotifications();
   showNotification();
-  debugPrint('Handling a background message ${message.messageId}');
+  debugPrint('Handling a background message');
+}
+
+bool canGoBack(String url){
+  if (dontgoback) {
+    dontgoback = false;
+    return false;
+  }
+  if (url == 'https://hapy-vernetzt.de/dashboard/' ||
+              url == 'https://hapy-vernetzt.de/login/' ||
+              url == 'https://hapy-vernetzt.de/signup/' ||
+              url == 'https://hapy-vernetzt.de/logout/' ||
+              url == 'https://hapy-vernetzt.de/password_reset/') {
+                return false;
+              }
+  return true;
 }
 
 Future<void> main() async {
@@ -59,8 +73,6 @@ Future<void> main() async {
   });
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-  debugPrint('Token: ${await FirebaseMessaging.instance.getToken()}');
 
   if (Platform.isIOS) {
     runApp(const IOSWebViewPage());
