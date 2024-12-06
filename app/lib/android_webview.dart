@@ -9,6 +9,25 @@ import 'package:http/http.dart' as http;
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 
 class AndroidWebViewPage extends StatefulWidget {
+
+  final String gobackjs =   '''
+                              var element = document.querySelector('div.nav-section.nav-brand');
+                              if (element) {
+                                const arrowLink = document.createElement('a');
+                                arrowLink.href = 'javascript:window.history.back();';
+                                arrowLink.classList.add('nav-button');    
+                                arrowLink.innerHTML = `<i class="fas fa-chevron-left"></i>`;
+                                element.prepend(arrowLink);
+                              }
+                            ''';
+
+  final String removebannerjs = '''
+                                  const banner = document.querySelector('.footer-icon-frame');
+                                  if (banner) {
+                                    banner.remove();
+                                  }
+                                ''';
+
   const AndroidWebViewPage({super.key});
 
   @override
@@ -50,25 +69,16 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
       })
       ..setOnPageFinished(
         (url) async {
-          String removebanner = '''
-                                  const banner = document.querySelector('.footer-icon-frame');
-                                  if (banner) {
-                                    banner.remove();
-                                  }
-                                ''';
-          androidcontroller!.runJavaScript(removebanner);
+          androidcontroller!.runJavaScript(widget.removebannerjs);
           if (canGoBack(url)) {
-            String jscode = '''
-                              var element = document.querySelector('div.nav-section.nav-brand');
-                              if (element) {
-                                const arrowLink = document.createElement('a');
-                                arrowLink.href = 'javascript:window.history.back();';
-                                arrowLink.classList.add('nav-button');    
-                                arrowLink.innerHTML = `<i class="fas fa-chevron-left"></i>`;
-                                element.prepend(arrowLink);
-                              }
-                            ''';
-            androidcontroller!.runJavaScript(jscode);
+            //TODO Whitelist hinzufügen
+            //TODO Loading Bar soll absolut positioniert sein
+            //TODO Nur einmal Erinnerungsnachricht bekommen, wenn man sich ausloggt
+            //TODO Zusätzlich nur einmal eine Nachricht senden wenn SessionID abgelaufen ist
+            //TODO Pull Refresh hinzufügen
+            //TODO Dokument zu API Tokens hinzufügen
+            //TODO README.md hinzufügen
+            androidcontroller!.runJavaScript(widget.gobackjs);
           }
           if (_previousurl == 'https://hapy-vernetzt.de/login/' &&
               url == 'https://hapy-vernetzt.de/dashboard/') {
