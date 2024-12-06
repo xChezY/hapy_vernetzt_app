@@ -7,5 +7,5 @@ services:
       - "${PUBLIC_PORT}:8080"
     env_file: .env
     volumes:
-      - /database/database.sqlite:/database/database.sqlite
-      - /hapy-vernetzt-app-firebase-adminsdk.json:/hapy-vernetzt-app-firebase-adminsdk.json
+      - ./database/database.sqlite:/var/www/html/database/database.sqlite
+      - ./hapy-vernetzt-app-firebase-adminsdk.json:/var/www/html/hapy-vernetzt-app-firebase-adminsdk.json
