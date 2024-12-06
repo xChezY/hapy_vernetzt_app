@@ -32,6 +32,10 @@
         }
     },
     "scripts": {
+        "migrate-and-schedule": [
+            "@php artisan migrate --force",
+            "@php artisan schedule:work"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
