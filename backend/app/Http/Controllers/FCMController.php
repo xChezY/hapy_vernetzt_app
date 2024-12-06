@@ -20,11 +20,11 @@ class FCMController extends Controller
         $messaging = $factory->createMessaging();
     
         if(!FCMToken::where('token', $request->token)->exists()){
-            $fcmtoken = new FCMToken([
-                'token' => $request->token
-            ]);
-            $result = $messaging->validateRegistrationTokens($fcmtoken);
+            $result = $messaging->validateRegistrationTokens($request->token);
             if (!empty($result['valid'])){
+                $fcmtoken = new FCMToken([
+                    'token' => $request->token
+                ]);
                 $fcmtoken->save();
                 return response()->json(['message' => 'Device token updated successfully']);
             }
