@@ -2,7 +2,7 @@ FROM serversideup/php:8.3-fpm-nginx-alpine
 
 WORKDIR /var/www/html
 
-COPY . .
+COPY --chown=www-data:www-data . .
 
 RUN composer install
 RUN php artisan config:clear
