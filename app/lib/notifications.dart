@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:hapy_vernetzt_app/android_notification.dart';
 import 'package:hapy_vernetzt_app/ios_notification.dart';
