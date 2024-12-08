@@ -7,17 +7,18 @@ import 'package:http/http.dart' as http;
 
 void initToken() async {
   String token = '';
-  if(token.isNotEmpty){
+  if (token.isNotEmpty) {
     return;
   }
-  if (Platform.isIOS){
+  if (Platform.isIOS) {
     token = await FirebaseMessaging.instance.getAPNSToken() ?? '';
   }
-  if (Platform.isAndroid){
+  if (Platform.isAndroid) {
     token = await FirebaseMessaging.instance.getToken() ?? '';
   }
-  if(token.isNotEmpty){
-    await http.post(Uri.parse('${Env.backendurl}/api/send-device-token'), body: {
+  if (token.isNotEmpty) {
+    await http
+        .post(Uri.parse('${Env.backendurl}/api/send-device-token'), body: {
       'Token': token,
       'Authorization': 'Bearer ${Env.apitoken}',
     });
@@ -25,10 +26,10 @@ void initToken() async {
   }
 }
 
-void initOnTokenRefresh(){
+void initOnTokenRefresh() {
   FirebaseMessaging.instance.onTokenRefresh.listen((token) async {
-
-    await http.post(Uri.parse('${Env.backendurl}/api/send-device-token'), body: {
+    await http
+        .post(Uri.parse('${Env.backendurl}/api/send-device-token'), body: {
       'Token': token,
       'Authorization': 'Bearer ${Env.apitoken}',
     });

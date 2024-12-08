@@ -14,13 +14,13 @@ class DragGesturePullToRefresh extends VerticalDragGestureRecognizer {
   // loading
   Completer<void> completer = Completer<void>();
   late int msWaitToRestart;
-  int  msLoading = 0;
+  int msLoading = 0;
   bool isLoading = true;
 
   // drag
-  int    dragStartYDiff = 0;
+  int dragStartYDiff = 0;
   double dragHeightEnd = 200;
-  bool   dragStarted = false;
+  bool dragStarted = false;
   double dragDistance = 0;
 
   @override
@@ -35,17 +35,35 @@ class DragGesturePullToRefresh extends VerticalDragGestureRecognizer {
   }
 
   /// [context] RefreshIndicator
-  DragGesturePullToRefresh setContext(BuildContext context) { _context = context; return this; }
+  DragGesturePullToRefresh setContext(BuildContext context) {
+    _context = context;
+    return this;
+  }
+
   /// [controller] dymanic controller
-  DragGesturePullToRefresh setController(dynamic controller) { _controller = controller; return this; }
+  DragGesturePullToRefresh setController(dynamic controller) {
+    _controller = controller;
+    return this;
+  }
 
   /// [dragHeightEnd] End height for starting the refresh
-  DragGesturePullToRefresh setDragHeightEnd(double value)      { dragHeightEnd = value;   return this; }
+  DragGesturePullToRefresh setDragHeightEnd(double value) {
+    dragHeightEnd = value;
+    return this;
+  }
+
   /// [msWaitToRestart] milliseconds to reallow pull to refresh if the website
   /// didn't load in msWaitToRestart time
-  DragGesturePullToRefresh setWaitToRestart(int value)  { msWaitToRestart = value; return this; }
+  DragGesturePullToRefresh setWaitToRestart(int value) {
+    msWaitToRestart = value;
+    return this;
+  }
+
   /// [dragStartYDiff] add some offset as page top is not always obviously page top, e.g. 10
-  DragGesturePullToRefresh setDragStartYDiff(int value) { dragStartYDiff = value;  return this; }
+  DragGesturePullToRefresh setDragStartYDiff(int value) {
+    dragStartYDiff = value;
+    return this;
+  }
 
   /// start refresh
   Future<void> refresh() {
@@ -77,35 +95,41 @@ class DragGesturePullToRefresh extends VerticalDragGestureRecognizer {
   FixedScrollMetrics _getMetrics(double minScrollExtent, double maxScrollExtent,
       double pixels, double viewportDimension, AxisDirection axisDirection) {
     return FixedScrollMetrics(
-      minScrollExtent: minScrollExtent,
-      maxScrollExtent: maxScrollExtent,
-      pixels: pixels,
-      viewportDimension: viewportDimension,
-      axisDirection: axisDirection, devicePixelRatio: 1
-    );
+        minScrollExtent: minScrollExtent,
+        maxScrollExtent: maxScrollExtent,
+        pixels: pixels,
+        viewportDimension: viewportDimension,
+        axisDirection: axisDirection,
+        devicePixelRatio: 1);
   }
 
   /// [msWaitToRestart] milliseconds to reallow pull to refresh if the website
   /// didn't load in msWaitToRestart time
   ///
   /// [dragStartYDiff] add some offset as page top is not always obviously page top, e.g. 10
-  DragGesturePullToRefresh([this.msWaitToRestart = exceedsLoadingTime, this.dragStartYDiff = 0]) {
+  DragGesturePullToRefresh(
+      [this.msWaitToRestart = exceedsLoadingTime, this.dragStartYDiff = 0]) {
     onStart = (DragStartDetails dragDetails) async {
       //debugPrint('DragGesturePullToRefresh(): $dragDetails');
       if (!isLoading ||
           // Reallow pull to refresh if the website didn't load in msWaitToRestart time
-          (msLoading > 0 && (DateTime.now().millisecondsSinceEpoch - msLoading) > msWaitToRestart)) {
+          (msLoading > 0 &&
+              (DateTime.now().millisecondsSinceEpoch - msLoading) >
+                  msWaitToRestart)) {
         Offset scrollPos = await _controller.getScrollPosition();
 
         // Only allow RefreshIndicator if you are at the top of page!
         if (scrollPos.dy <= dragStartYDiff) {
           dragStarted = true;
           dragDistance = 0;
-          ScrollStartNotification(
-            metrics: _getMetrics(0, dragHeightEnd, 0, dragHeightEnd, AxisDirection.down),
-            dragDetails: dragDetails,
-            context: _context
-          ).dispatch(_context);
+          if (_context.mounted) {
+            ScrollStartNotification(
+                    metrics: _getMetrics(
+                        0, dragHeightEnd, 0, dragHeightEnd, AxisDirection.down),
+                    dragDetails: dragDetails,
+                    context: _context)
+                .dispatch(_context);
+          }
         }
       }
     };
@@ -114,13 +138,15 @@ class DragGesturePullToRefresh extends VerticalDragGestureRecognizer {
         double dy = dragDetails.delta.dy;
         dragDistance += dy;
         ScrollUpdateNotification(
-          metrics: _getMetrics(
-            dy > 0 ? 0 : dragDistance, dragHeightEnd,
-            dy > 0 ? (-1) * dy : dragDistance, dragHeightEnd,
-            dragDistance < 0 ? AxisDirection.up : AxisDirection.down),
-            context: _context,
-            scrollDelta: (-1) * dy
-        ).dispatch(_context);
+                metrics: _getMetrics(
+                    dy > 0 ? 0 : dragDistance,
+                    dragHeightEnd,
+                    dy > 0 ? (-1) * dy : dragDistance,
+                    dragHeightEnd,
+                    dragDistance < 0 ? AxisDirection.up : AxisDirection.down),
+                context: _context,
+                scrollDelta: (-1) * dy)
+            .dispatch(_context);
         if (dragDistance < 0) {
           _clearDrag();
         }
@@ -129,19 +155,21 @@ class DragGesturePullToRefresh extends VerticalDragGestureRecognizer {
     onEnd = (DragEndDetails dragDetails) {
       if (dragStarted) {
         ScrollEndNotification(
-            metrics: _getMetrics(0, dragHeightEnd, dragDistance, dragHeightEnd, AxisDirection.down),
-            context: _context
-        ).dispatch(_context);
+                metrics: _getMetrics(0, dragHeightEnd, dragDistance,
+                    dragHeightEnd, AxisDirection.down),
+                context: _context)
+            .dispatch(_context);
         _clearDrag();
       }
     };
     onCancel = () {
       if (dragStarted) {
         ScrollUpdateNotification(
-          metrics: _getMetrics(0, dragHeightEnd, 1, dragHeightEnd, AxisDirection.up),
-          context: _context,
-          scrollDelta: 0
-        ).dispatch(_context);
+                metrics: _getMetrics(
+                    0, dragHeightEnd, 1, dragHeightEnd, AxisDirection.up),
+                context: _context,
+                scrollDelta: 0)
+            .dispatch(_context);
         _clearDrag();
       }
     };

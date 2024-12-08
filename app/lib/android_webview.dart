@@ -11,8 +11,7 @@ import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 
 class AndroidWebViewPage extends StatefulWidget {
-
-  final String gobackjs =   '''
+  final String gobackjs = '''
                               var element = document.querySelector('div.nav-section.nav-brand');
                               if (element) {
                                 const arrowLink = document.createElement('a');
@@ -36,8 +35,8 @@ class AndroidWebViewPage extends StatefulWidget {
   State<StatefulWidget> createState() => _AndroidWebViewPageState();
 }
 
-class _AndroidWebViewPageState extends State<AndroidWebViewPage> with WidgetsBindingObserver{
-
+class _AndroidWebViewPageState extends State<AndroidWebViewPage>
+    with WidgetsBindingObserver {
   String _previousurl = '';
   final ValueNotifier<int> _progress = ValueNotifier<int>(0);
 
@@ -65,7 +64,11 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> with WidgetsBin
         pullToRefresh.started();
       })
       ..setOnNavigationRequest((NavigationRequest request) {
-        final regexPattern = r'^https?:\/\/([a-zA-Z0-9-]+\.)?' + RegExp.escape(Env.appurl.replaceAll('https://', '').replaceAll('http://', '')) + r'\/?$';
+        final regexPattern = r'^https?:\/\/([a-zA-Z0-9-]+\.)?' +
+            RegExp.escape(Env.appurl
+                .replaceAll('https://', '')
+                .replaceAll('http://', '')) +
+            r'\/?$';
         if (RegExp(regexPattern).hasMatch(request.url)) {
           return NavigationDecision.prevent;
         }
@@ -95,28 +98,26 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> with WidgetsBin
             }
           }
           if (url == '${Env.appurl}/logout/') {
-            
             await storage.delete(key: 'sessionid');
           }
           _previousurl = url;
         },
       )
       ..setOnHttpError((HttpResponseError error) {
-        if (error.response!.statusCode == 403 && error.request!.uri.toString() == '${Env.appurl}/logout/') {
+        if (error.response!.statusCode == 403 &&
+            error.request!.uri.toString() == '${Env.appurl}/logout/') {
           logout = true;
         }
       })
       ..setOnWebResourceError((WebResourceError error) {
         pullToRefresh.finished();
-      }
-      )
-      );
+      }));
 
     pullToRefresh
-      .setController(androidcontroller)
-      .setDragHeightEnd(500)
-      .setDragStartYDiff(10)
-      .setWaitToRestart(3000);
+        .setController(androidcontroller)
+        .setDragHeightEnd(500)
+        .setDragStartYDiff(10)
+        .setWaitToRestart(3000);
 
     WidgetsBinding.instance.addObserver(this);
 
@@ -163,7 +164,7 @@ Widget androidWebView(BuildContext context, ValueNotifier<int> progress,
         child: RefreshIndicator(
           color: const Color.fromRGBO(47, 133, 90, 1),
           backgroundColor: Colors.white,
-          triggerMode:  RefreshIndicatorTriggerMode.onEdge,
+          triggerMode: RefreshIndicatorTriggerMode.onEdge,
           onRefresh: pullToRefresh.refresh,
           child: Column(
             children: [
@@ -188,10 +189,11 @@ Widget androidWebView(BuildContext context, ValueNotifier<int> progress,
                       if (snapshot.connectionState == ConnectionState.done) {
                         return value == 100 || (value <= 50 && value >= 1)
                             ? AndroidWebViewWidget(
-                                    AndroidWebViewWidgetCreationParams(
-                                        controller: androidcontroller!,
-                                        gestureRecognizers: {Factory(() => pullToRefresh)}))
-                                .build(context)
+                                AndroidWebViewWidgetCreationParams(
+                                    controller: androidcontroller!,
+                                    gestureRecognizers: {
+                                    Factory(() => pullToRefresh)
+                                  })).build(context)
                             : const Center(
                                 child: CircularProgressIndicator(
                                 color: Color.fromRGBO(47, 133, 90, 1),

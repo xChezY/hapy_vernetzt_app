@@ -48,7 +48,11 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
       const WebKitNavigationDelegateCreationParams(),
     )
       ..setOnNavigationRequest((NavigationRequest request) {
-        final regexPattern = r'^https?:\/\/([a-zA-Z0-9-]+\.)?' + RegExp.escape(Env.appurl.replaceAll('https://', '').replaceAll('http://', '')) + r'\/?$';
+        final regexPattern = r'^https?:\/\/([a-zA-Z0-9-]+\.)?' +
+            RegExp.escape(Env.appurl
+                .replaceAll('https://', '')
+                .replaceAll('http://', '')) +
+            r'\/?$';
         if (RegExp(regexPattern).hasMatch(request.url)) {
           return NavigationDecision.prevent;
         }
@@ -97,11 +101,11 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
         },
       )
       ..setOnHttpError((HttpResponseError error) {
-        if (error.response!.statusCode == 403 && error.request!.uri.toString() == '${Env.appurl}/logout/') {
+        if (error.response!.statusCode == 403 &&
+            error.request!.uri.toString() == '${Env.appurl}/logout/') {
           logout = true;
         }
-      })
-      );
+      }));
 
     return true;
   }
