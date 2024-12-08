@@ -1,12 +1,11 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:hapy_vernetzt_app/env.dart';
+import 'package:hapy_vernetzt_app/notifications.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
-
-import 'package:http/http.dart' as http;
 
 import 'main.dart';
 
@@ -31,14 +30,8 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
     String? sessionid = await storage.read(key: 'sessionid');
 
     if (sessionid != null) {
-      Map<String, dynamic> json = jsonDecode((await http.get(
-        Uri.parse('https://hapy-vernetzt.de/api/v3/authinfo'),
-        headers: <String, String>{'Cookie': 'hameln-sessionid=$sessionid'},
-      ))
-          .body);
-
-      if (json['data']['authenticated'] == true) {
-        starturl = 'https://hapy-vernetzt.de/dashboard/';
+      if (await isSessiondIDValid()) {
+        starturl = '${Env.appurl}/dashboard/';
       } else {
         await storage.delete(key: 'sessionid');
       }
@@ -54,6 +47,13 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
     ioscontroller!.setPlatformNavigationDelegate(WebKitNavigationDelegate(
       const WebKitNavigationDelegateCreationParams(),
     )
+      ..setOnNavigationRequest((NavigationRequest request) {
+        final regexPattern = r'^https?:\/\/([a-zA-Z0-9-]+\.)?' + RegExp.escape(Env.appurl.replaceAll('https://', '').replaceAll('http://', '')) + r'\/?$';
+        if (RegExp(regexPattern).hasMatch(request.url)) {
+          return NavigationDecision.prevent;
+        }
+        return NavigationDecision.navigate;
+      })
       ..setOnProgress((int progress) {
         _progress.value = progress;
       })
@@ -80,8 +80,9 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
             ioscontroller!.clearCache();
             ioscontroller!.runJavaScript(jscode);
           }
-          if (_previousurl == 'https://hapy-vernetzt.de/login/' &&
-              url == 'https://hapy-vernetzt.de/dashboard/') {
+          if (_previousurl == '${Env.appurl}/login/' &&
+              url == '${Env.appurl}/dashboard/') {
+            logout = false;
             List<Cookie> cookies = await cookieManager.getCookies(url);
             for (Cookie cookie in cookies) {
               if (cookie.name == 'hameln-sessionid') {
@@ -89,12 +90,18 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
               }
             }
           }
-          if (url == 'https://hapy-vernetzt.de/logout/') {
+          if (url == '${Env.appurl}/logout/') {
             await storage.delete(key: 'sessionid');
           }
           _previousurl = url;
         },
-      ));
+      )
+      ..setOnHttpError((HttpResponseError error) {
+        if (error.response!.statusCode == 403 && error.request!.uri.toString() == '${Env.appurl}/logout/') {
+          logout = true;
+        }
+      })
+      );
 
     return true;
   }
@@ -123,7 +130,7 @@ Widget iOSWebView(BuildContext context, ValueNotifier<int> progress,
               valueListenable: progress,
               builder: (context, progress, child) {
                 if (progress == 100) {
-                  return const SizedBox(height: 0);
+                  return const SizedBox(height: 4);
                 }
                 return LinearProgressIndicator(
                   value: progress / 100,
