@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:hapy_vernetzt_app/android_notification.dart';
+import 'package:hapy_vernetzt_app/env.dart';
 import 'package:hapy_vernetzt_app/ios_notification.dart';
 import 'package:hapy_vernetzt_app/main.dart';
 import 'package:http/http.dart' as http;
@@ -22,13 +23,25 @@ class HapyAlerts {
   final String url;
 }
 
+Future<bool> isSessiondIDValid() async {
+  String? sessionid = await storage.read(key: 'sessionid');
+
+  Map<String, dynamic> json = jsonDecode((await http.get(
+    Uri.parse('${Env.appurl}/api/v3/authinfo'),
+    headers: <String, String>{'Cookie': 'hameln-sessionid=$sessionid'},
+  ))
+      .body);
+
+  return json['data']['authenticated'];
+}
+
 Future<List<HapyAlerts>> getHapyAlerts(String? sessionid) async {
   if (sessionid == null) {
     return [];
   }
   List<HapyAlerts> unreadedalerts = [];
   Map<String, dynamic> json = jsonDecode((await http.get(
-    Uri.parse('https://hapy-vernetzt.de/api/v3/navigation/alerts'),
+    Uri.parse('${Env.appurl}/api/v3/navigation/alerts'),
     headers: <String, String>{'Cookie': 'hameln-sessionid=$sessionid'},
   ))
       .body);
@@ -57,15 +70,19 @@ Future<List<HapyAlerts>> getHapyAlerts(String? sessionid) async {
 void showNotification() async {
   String? sessionid = await storage.read(key: 'sessionid');
   if (sessionid == null) {
+    return;
+  }
+  if (logout && await isSessiondIDValid()) {
+    logout = false;
     if (notificationid == -1) {
       notificationid = id++;
     }
     await flutterlocalnotificationsplugin.show(
       notificationid,
       "Keine Benachrichtigungen",
-      "Du bist wieder abgemeldet worden. Melde dich jetzt wieder an, um weiterhin Benachrichtigungen zu erhalten.",
+      "Du bist abgemeldet. Melde dich wieder an, um weiterhin Benachrichtigungen zu erhalten.",
       NotificationDetails(
-        android: initialiseAndroidNotificationDetails(true),
+        android: initialiseAndroidNotificationDetails(),
       ),
       payload: '/login/',
     );
@@ -80,7 +97,7 @@ void showNotification() async {
       alert.group,
       alert.text.replaceAll("<b>", "").replaceAll("</b>", ""),
       NotificationDetails(
-        android: initialiseAndroidNotificationDetails(false),
+        android: initialiseAndroidNotificationDetails(),
       ),
       payload: alert.url,
     );
@@ -113,11 +130,11 @@ Future<void> onDidReceiveNotificationResponse(
   if (notificationResponse.payload != null) {
     dontgoback = true;
     if (Platform.isIOS) {
-      await ioscontroller!.loadRequest(LoadRequestParams(
-          uri: Uri.parse("https://hapy-vernetzt.de${payload!}")));
+      await ioscontroller!.loadRequest(
+          LoadRequestParams(uri: Uri.parse("${Env.appurl}${payload!}")));
     } else {
-      await androidcontroller!.loadRequest(LoadRequestParams(
-          uri: Uri.parse("https://hapy-vernetzt.de${payload!}")));
+      await androidcontroller!.loadRequest(
+          LoadRequestParams(uri: Uri.parse("${Env.appurl}${payload!}")));
     }
   }
 }
