@@ -38,6 +38,7 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   firebase_messaging: ^15.1.5
   firebase_core: ^3.8.0
+  flutterfire_cli: ^1.0.0
   envied: ^1.0.0
   envied_generator: ^1.0.0
   build_runner: ^2.4.13
@@ -80,7 +81,7 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 scripts:
-  gen: dart run build_runner build --delete-conflicting-outputs
+  gen: dart run build_runner build --delete-conflicting-outputs && flutterfire configure
   lint: dart fix --apply && dart format lib && flutter analyze
 
 # The following section is specific to Flutter packages.
