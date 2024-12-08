@@ -19,7 +19,7 @@ import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 late DragGesturePullToRefresh pullToRefresh;
 
 final FlutterLocalNotificationsPlugin flutterlocalnotificationsplugin =
-      FlutterLocalNotificationsPlugin();
+    FlutterLocalNotificationsPlugin();
 
 final cookieManager = WebviewCookieManager();
 
@@ -49,23 +49,22 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   showNotification();
 }
 
-bool canGoBack(String url){
+bool canGoBack(String url) {
   if (dontgoback) {
     dontgoback = false;
     return false;
   }
   if (url == '${Env.appurl}/dashboard/' ||
-              url == '${Env.appurl}/login/' ||
-              url == '${Env.appurl}/signup/' ||
-              url == '${Env.appurl}/logout/' ||
-              url == '${Env.appurl}/password_reset/') {
-                return false;
-              }
+      url == '${Env.appurl}/login/' ||
+      url == '${Env.appurl}/signup/' ||
+      url == '${Env.appurl}/logout/' ||
+      url == '${Env.appurl}/password_reset/') {
+    return false;
+  }
   return true;
 }
 
 Future<void> main() async {
-
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
