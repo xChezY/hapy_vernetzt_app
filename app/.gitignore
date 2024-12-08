@@ -1,5 +1,6 @@
 /lib/firebase_options.dart
 /lib/env.g.dart
+.env
 
 # Miscellaneous
 *.class
