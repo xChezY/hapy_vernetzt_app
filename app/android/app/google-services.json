@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "679374985251",
+    "project_id": "hapy-vernetzt-app",
+    "storage_bucket": "hapy-vernetzt-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:679374985251:android:6e16a3520eda9234633996",
+        "android_client_info": {
+          "package_name": "com.example.hapyVe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNfHeI-pTn6D9riNJzyBvQTFfNsBiyNec"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
