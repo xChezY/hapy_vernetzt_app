@@ -14,4 +14,4 @@ RUN composer install --no-dev --no-interaction --no-progress --no-suggest
 RUN php artisan config:clear
 RUN php artisan view:clear
 
-CMD [ "composer", "migrate" ]
+
