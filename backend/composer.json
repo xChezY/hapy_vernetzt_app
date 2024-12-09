@@ -33,7 +33,9 @@
     },
     "scripts": {
         "migrate-and-schedule": [
-            "touch storage/sqlite/database.sqlite",
+            "@php -r \"if(!file_exists('storage/sqlite')) mkdir('storage/sqlite', 0775, true);\"",
+            "@php -r \"touch('storage/sqlite/database.sqlite');\"",
+            "@php -r \"chmod('storage/sqlite/database.sqlite', 0664);\"",
             "@php artisan migrate --force",
             "@php artisan schedule:work"
         ],
