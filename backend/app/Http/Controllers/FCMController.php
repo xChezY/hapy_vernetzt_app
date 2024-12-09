@@ -13,17 +13,17 @@ class FCMController extends Controller
     public function sendDeviceToken(Request $request){
 
         $request->validate([
-            'token' => 'required|string'
+            'Token' => 'required|string'
         ]);
 
         $factory = (new Factory)->withServiceAccount(base_path() . '/hapy-vernetzt-app-firebase-adminsdk.json');
         $messaging = $factory->createMessaging();
     
-        if(!FCMToken::where('token', $request->token)->exists()){
-            $result = $messaging->validateRegistrationTokens($request->token);
+        if(!FCMToken::where('token', $request->Token)->exists()){
+            $result = $messaging->validateRegistrationTokens($request->Token);
             if (!empty($result['valid'])){
                 $fcmtoken = new FCMToken([
-                    'token' => $request->token
+                    'token' => $request->Token
                 ]);
                 $fcmtoken->save();
                 return response()->json(['message' => 'Device token updated successfully']);

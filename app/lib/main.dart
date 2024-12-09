@@ -6,18 +6,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hapy_vernetzt_app/android_webview.dart';
+import 'package:hapy_vernetzt_app/env.dart';
 import 'package:hapy_vernetzt_app/firebase.dart';
 import 'package:hapy_vernetzt_app/firebase_options.dart';
 import 'package:hapy_vernetzt_app/notifications.dart';
 import 'package:hapy_vernetzt_app/ios_webview.dart';
+import 'package:hapy_vernetzt_app/pull_to_refresh.dart';
 import 'package:webview_cookie_manager/webview_cookie_manager.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 
-final FlutterLocalNotificationsPlugin flutterlocalnotificationsplugin =
-      FlutterLocalNotificationsPlugin();
+late DragGesturePullToRefresh pullToRefresh;
 
-late AndroidNotificationChannel channel;
+final FlutterLocalNotificationsPlugin flutterlocalnotificationsplugin =
+    FlutterLocalNotificationsPlugin();
 
 final cookieManager = WebviewCookieManager();
 
@@ -32,7 +34,9 @@ FlutterSecureStorage storage = const FlutterSecureStorage();
 
 bool dontgoback = false;
 
-String starturl = 'https://hapy-vernetzt.de/signup/';
+bool logout = false;
+
+String starturl = '${Env.appurl}/signup/';
 
 int id = 0;
 
@@ -45,23 +49,22 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   showNotification();
 }
 
-bool canGoBack(String url){
+bool canGoBack(String url) {
   if (dontgoback) {
     dontgoback = false;
     return false;
   }
-  if (url == 'https://hapy-vernetzt.de/dashboard/' ||
-              url == 'https://hapy-vernetzt.de/login/' ||
-              url == 'https://hapy-vernetzt.de/signup/' ||
-              url == 'https://hapy-vernetzt.de/logout/' ||
-              url == 'https://hapy-vernetzt.de/password_reset/') {
-                return false;
-              }
+  if (url == '${Env.appurl}/dashboard/' ||
+      url == '${Env.appurl}/login/' ||
+      url == '${Env.appurl}/signup/' ||
+      url == '${Env.appurl}/logout/' ||
+      url == '${Env.appurl}/password_reset/') {
+    return false;
+  }
   return true;
 }
 
 Future<void> main() async {
-
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
