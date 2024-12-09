@@ -32,10 +32,9 @@
         }
     },
     "scripts": {
-        "migrate-and-schedule": [
+        "migrate": [
             "@php -r \"file_exists('storage/sqlite/database.sqlite') || file_put_contents('storage/sqlite/database.sqlite', '');\"",
-            "@php artisan migrate --force",
-            "@php artisan schedule:work"
+            "@php artisan migrate --force"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
