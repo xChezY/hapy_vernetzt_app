@@ -33,6 +33,7 @@
     },
     "scripts": {
         "migrate-and-schedule": [
+            "touch storage/sqlite/database.sqlite",
             "@php artisan migrate --force",
             "@php artisan schedule:work"
         ],
