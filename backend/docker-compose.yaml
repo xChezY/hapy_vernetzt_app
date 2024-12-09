@@ -10,5 +10,8 @@ services:
       - PHP_OPCACHE_ENABLE=1
       - DB_DATABASE=/var/www/html/storage/sqlite/database.sqlite
     volumes:
-      - ./sqlite:/var/www/html/storage/sqlite
+      - sqlite_data:/var/www/html/storage/sqlite
       - ./hapy-vernetzt-app-firebase-adminsdk.json:/var/www/html/hapy-vernetzt-app-firebase-adminsdk.json
+
+volumes:
+  sqlite_data:
