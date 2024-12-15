@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyBNfHeI-pTn6D9riNJzyBvQTFfNsBiyNec',
-    appId: '1:679374985251:android:6e16a3520eda9234633996',
+    appId: '1:679374985251:android:563b84a37a1559a9633996',
     messagingSenderId: '679374985251',
     projectId: 'hapy-vernetzt-app',
     storageBucket: 'hapy-vernetzt-app.firebasestorage.app',
@@ -59,10 +59,10 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCuZMfpNQhYIdEKhYpuRLM3a0aL4jJ67KU',
-    appId: '1:679374985251:ios:96bcbc7a1c62df0c633996',
+    appId: '1:679374985251:ios:2564b75a53b7b135633996',
     messagingSenderId: '679374985251',
     projectId: 'hapy-vernetzt-app',
     storageBucket: 'hapy-vernetzt-app.firebasestorage.app',
-    iosBundleId: 'com.example.hapyVernetztApp',
+    iosBundleId: 'de.hameln-pyrmont.hapyvernetzt',
   );
 }
