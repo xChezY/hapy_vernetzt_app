@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:679374985251:android:6e16a3520eda9234633996",
+        "mobilesdk_app_id": "1:679374985251:android:563b84a37a1559a9633996",
         "android_client_info": {
-          "package_name": "com.example.hapyVe"
+          "package_name": "de.hameln_pyrmont.hapyvernetzt"
         }
       },
       "oauth_client": [],
