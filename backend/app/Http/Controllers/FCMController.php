@@ -26,7 +26,7 @@ class FCMController extends Controller
                     'token' => $request->Token
                 ]);
                 $fcmtoken->save();
-                return response()->json(['message' => 'Device token updated successfully'],400);
+                return response()->json(['message' => 'Device token updated successfully']);
             }
         }
         return response()->json(['message' => 'Token is invalid or already exists']);
