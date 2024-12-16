@@ -11,12 +11,9 @@ import 'package:hapy_vernetzt_app/firebase.dart';
 import 'package:hapy_vernetzt_app/firebase_options.dart';
 import 'package:hapy_vernetzt_app/notifications.dart';
 import 'package:hapy_vernetzt_app/ios_webview.dart';
-import 'package:hapy_vernetzt_app/pull_to_refresh.dart';
 import 'package:webview_cookie_manager/webview_cookie_manager.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
-
-late DragGesturePullToRefresh pullToRefresh;
 
 final FlutterLocalNotificationsPlugin flutterlocalnotificationsplugin =
     FlutterLocalNotificationsPlugin();
