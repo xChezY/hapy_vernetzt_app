@@ -18,7 +18,7 @@ class FCMController extends Controller
 
         $factory = (new Factory)->withServiceAccount(base_path() . '/hapy-vernetzt-app-firebase-adminsdk.json');
         $messaging = $factory->createMessaging();
-    
+
         if(!FCMToken::where('token', $request->Token)->exists()){
             $result = $messaging->validateRegistrationTokens($request->Token);
             if (!empty($result['valid'])){
@@ -26,7 +26,7 @@ class FCMController extends Controller
                     'token' => $request->Token
                 ]);
                 $fcmtoken->save();
-                return response()->json(['message' => 'Device token updated successfully']);
+                return response()->json(['message' => 'Device token updated successfully'],400);
             }
         }
         return response()->json(['message' => 'Token is invalid or already exists']);
@@ -35,8 +35,11 @@ class FCMController extends Controller
     public function sendMessage() {
         $factory = (new Factory)->withServiceAccount(base_path() . '/hapy-vernetzt-app-firebase-adminsdk.json');
         $messaging = $factory->createMessaging();
-    
+
         $tokens = FCMToken::getAllTokens();
+        if (empty($tokens)){
+            return response()->json(['message' => 'No tokens found']);
+        }
         $message = CloudMessage::new();
         $report = $messaging->sendMulticast($message, $tokens);
 
