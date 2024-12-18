@@ -77,7 +77,6 @@ Future<void> main() async {
   initNotifications();
 
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    print("Listening to messages");
     showNotification();
   });
 
