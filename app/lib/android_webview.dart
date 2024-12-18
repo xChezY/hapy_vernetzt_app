@@ -75,9 +75,6 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
         (url) async {
           androidcontroller!.runJavaScript(widget.removebannerjs);
           if (canGoBack(url)) {
-            //TODO Pull Refresh bei IOS hinzufügen und hoffen, dass der Bug nur bei Simulator auftritt
-            //TODO Dokument zu API Tokens hinzufügen
-            //TODO README.md hinzufügen
             androidcontroller!.runJavaScript(widget.gobackjs);
           }
           if (_previousurl == '${Env.appurl}/login/' &&
