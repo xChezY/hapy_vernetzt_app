@@ -31,13 +31,9 @@ FlutterSecureStorage storage = const FlutterSecureStorage();
 
 bool dontgoback = false;
 
-bool logout = false;
-
 String starturl = '${Env.appurl}/signup/';
 
-int id = 0;
-
-int notificationid = -1;
+int notificationid = 0;
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -61,8 +57,17 @@ bool canGoBack(String url) {
   return true;
 }
 
+void setLogout() async{
+  String? logout = await storage.read(key: 'logout');
+  if (logout == null){
+    await storage.write(key: 'logout', value: 'false');
+  }
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  setLogout();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
@@ -72,6 +77,7 @@ Future<void> main() async {
   initNotifications();
 
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    print("Listening to messages");
     showNotification();
   });
 

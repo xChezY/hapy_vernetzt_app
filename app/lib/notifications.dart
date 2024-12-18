@@ -69,16 +69,11 @@ Future<List<HapyAlerts>> getHapyAlerts(String? sessionid) async {
 
 void showNotification() async {
   String? sessionid = await storage.read(key: 'sessionid');
-  if (sessionid == null) {
-    return;
-  }
-  if (logout && await isSessiondIDValid()) {
-    logout = false;
-    if (notificationid == -1) {
-      notificationid = id++;
-    }
+  bool logout = await storage.read(key: 'logout') == 'true';
+  if (logout && (!(await isSessiondIDValid()) || sessionid == null)) {
+    await storage.write(key: 'logout', value: 'false');
     await flutterlocalnotificationsplugin.show(
-      notificationid,
+      0,
       "Keine Benachrichtigungen",
       "Du bist abgemeldet. Melde dich wieder an, um weiterhin Benachrichtigungen zu erhalten.",
       NotificationDetails(
@@ -87,13 +82,11 @@ void showNotification() async {
       payload: '/login/',
     );
     return;
-  } else {
-    notificationid = -1;
   }
   List<HapyAlerts> alerts = await getHapyAlerts(sessionid);
   for (HapyAlerts alert in alerts) {
     await flutterlocalnotificationsplugin.show(
-      id++,
+      notificationid++,
       alert.group,
       alert.text.replaceAll("<b>", "").replaceAll("</b>", ""),
       NotificationDetails(

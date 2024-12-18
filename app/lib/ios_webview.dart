@@ -81,7 +81,7 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
           }
           if (_previousurl == '${Env.appurl}/login/' &&
               url == '${Env.appurl}/dashboard/') {
-            logout = false;
+            await storage.write(key: 'logout', value: 'false');
             List<Cookie> cookies = await cookieManager.getCookies(url);
             for (Cookie cookie in cookies) {
               if (cookie.name == 'hameln-sessionid') {
@@ -90,15 +90,18 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
             }
           }
           if (url == '${Env.appurl}/logout/') {
+            notificationid = -1;
+            await storage.write(key: 'logout', value: 'true');
             await storage.delete(key: 'sessionid');
           }
           _previousurl = url;
         },
       )
-      ..setOnHttpError((HttpResponseError error) {
+      ..setOnHttpError((HttpResponseError error) async {
         if (error.response!.statusCode == 403 &&
             error.request!.uri.toString() == '${Env.appurl}/logout/') {
-          logout = true;
+          notificationid = -1;
+          await storage.write(key: 'logout', value: 'true');
         }
       }));
 
