@@ -65,4 +65,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'hapy-vernetzt-app.firebasestorage.app',
     iosBundleId: 'de.hameln-pyrmont.hapyvernetzt',
   );
+
 }

@@ -10,6 +10,24 @@ import 'package:webview_flutter_platform_interface/webview_flutter_platform_inte
 import 'main.dart';
 
 class IOSWebViewPage extends StatefulWidget {
+  final String gobackjs = '''
+                              var element = document.querySelector('div.nav-section.nav-brand');
+                              if (element) {
+                                const arrowLink = document.createElement('a');
+                                arrowLink.href = 'javascript:window.history.back();';
+                                arrowLink.classList.add('nav-button');    
+                                arrowLink.innerHTML = `<i class="fas fa-chevron-left"></i>`;
+                                element.prepend(arrowLink);
+                              }
+                            ''';
+
+  final String removebannerjs = '''
+                                  const banner = document.querySelector('.footer-icon-frame');
+                                  if (banner) {
+                                    banner.remove();
+                                  }
+                                ''';
+
   const IOSWebViewPage({super.key});
 
   @override
@@ -19,12 +37,6 @@ class IOSWebViewPage extends StatefulWidget {
 class _IOSWebViewPageState extends State<IOSWebViewPage> {
   String _previousurl = '';
   final ValueNotifier<int> _progress = ValueNotifier<int>(0);
-
-  @override
-  void dispose() {
-    super.dispose();
-    selectnotificationstream.close();
-  }
 
   Future<bool> _iOSControllerFuture() async {
     String? sessionid = await storage.read(key: 'sessionid');
@@ -41,11 +53,10 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
         WebKitWebViewController(WebKitWebViewControllerCreationParams())
           ..setJavaScriptMode(JavaScriptMode.unrestricted)
           ..enableZoom(false)
-          //..setAllowsBackForwardNavigationGestures(true) // there is no way to customize the back gesture on iOS
           ..loadRequest(LoadRequestParams(uri: Uri.parse(starturl)));
 
     ioscontroller!.setPlatformNavigationDelegate(WebKitNavigationDelegate(
-      const WebKitNavigationDelegateCreationParams(),
+      const PlatformNavigationDelegateCreationParams(),
     )
       ..setOnNavigationRequest((NavigationRequest request) {
         final regexPattern = r'^https?:\/\/([a-zA-Z0-9-]+\.)?' +
@@ -63,26 +74,10 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
       })
       ..setOnPageFinished(
         (url) async {
-          String removebanner = '''
-                                  const banner = document.querySelector('.footer-icon-frame');
-                                  if (banner) {
-                                    banner.remove();
-                                  }
-                                ''';
-          ioscontroller!.runJavaScript(removebanner);
+          ioscontroller!.runJavaScript(widget.removebannerjs);
           if (canGoBack(url)) {
-            String jscode = '''
-                              var element = document.querySelector('div.nav-section.nav-brand');
-                              if (element) {
-                                const arrowLink = document.createElement('a');
-                                arrowLink.href = 'javascript:window.history.back();';
-                                arrowLink.classList.add('nav-button');    
-                                arrowLink.innerHTML = `<i class="fas fa-chevron-left"></i>`;
-                                element.prepend(arrowLink);
-                              }
-                            ''';
             ioscontroller!.clearCache();
-            ioscontroller!.runJavaScript(jscode);
+            ioscontroller!.runJavaScript(widget.gobackjs);
           }
           if (_previousurl == '${Env.appurl}/login/' &&
               url == '${Env.appurl}/dashboard/') {
