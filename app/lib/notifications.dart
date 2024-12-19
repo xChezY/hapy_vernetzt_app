@@ -7,6 +7,7 @@ import 'package:hapy_vernetzt_app/env.dart';
 import 'package:hapy_vernetzt_app/ios_notification.dart';
 import 'package:hapy_vernetzt_app/main.dart';
 import 'package:http/http.dart' as http;
+import 'package:permission_handler/permission_handler.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 
 class HapyAlerts {
@@ -21,6 +22,11 @@ class HapyAlerts {
   final String group;
   final String text;
   final String url;
+}
+
+void requestPermission() async {
+  PermissionStatus status = await Permission.notification.status;
+  if (!status.isGranted) await Permission.notification.request();
 }
 
 Future<bool> isSessiondIDValid() async {

@@ -69,6 +69,8 @@ Future<void> main() async {
 
   setLogout();
 
+  requestPermission();
+
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   initToken();
