@@ -7,7 +7,8 @@ void initToken() async {
   String token = '';
   token = await FirebaseMessaging.instance.getToken() ?? '';
   if (token.isNotEmpty) {
-    await http.post(Uri.parse('${Env.backendurl}/api/send-device-token'), headers: {
+    await http
+        .post(Uri.parse('${Env.backendurl}/api/send-device-token'), headers: {
       'Authorization': 'Bearer ${Env.apitoken}',
     }, body: {
       'Token': token,

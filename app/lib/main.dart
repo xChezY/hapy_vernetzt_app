@@ -57,9 +57,9 @@ bool canGoBack(String url) {
   return true;
 }
 
-void setLogout() async{
+void setLogout() async {
   String? logout = await storage.read(key: 'logout');
-  if (logout == null){
+  if (logout == null) {
     await storage.write(key: 'logout', value: 'false');
   }
 }
