@@ -85,7 +85,7 @@ void showNotification() async {
       NotificationDetails(
         android: initialiseAndroidNotificationDetails(),
       ),
-      payload: '/login/',
+      payload: '/login/?v=3',
     );
     return;
   }

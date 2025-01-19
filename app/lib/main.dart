@@ -31,7 +31,13 @@ FlutterSecureStorage storage = const FlutterSecureStorage();
 
 bool dontgoback = false;
 
-String starturl = '${Env.appurl}/signup/';
+String starturl = '${Env.appurl}/signup/?v=3';
+
+final List whitelist = [
+  Env.appurl,
+  Env.cloudurl,
+  Env.chaturl
+];
 
 int notificationid = 0;
 
@@ -47,14 +53,31 @@ bool canGoBack(String url) {
     dontgoback = false;
     return false;
   }
-  if (url == '${Env.appurl}/dashboard/' ||
-      url == '${Env.appurl}/login/' ||
-      url == '${Env.appurl}/signup/' ||
-      url == '${Env.appurl}/logout/' ||
-      url == '${Env.appurl}/password_reset/') {
+  if (url.startsWith('${Env.appurl}/dashboard/?v=3') ||
+      url.startsWith('${Env.appurl}/login/?v=3') ||
+      url.startsWith('${Env.appurl}/signup/?v=3') ||
+      url.startsWith('${Env.appurl}/logout/?v=3') ||
+      url.startsWith('${Env.appurl}/password_reset/?v=3')) {
     return false;
   }
   return true;
+}
+
+bool isWhitelistedUrl(String url) {
+  for (final String domain in whitelist) {
+    final escapedDomain = RegExp.escape(domain
+        .replaceAll('https://', '')
+        .replaceAll('http://', ''));
+    final pattern = r'^https?:\/\/([a-zA-Z0-9-]+\.)?' + escapedDomain + r'(\/.*)?$';
+    if (RegExp(pattern).hasMatch(url)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool isChatUrl(String url) {
+  return url.startsWith('${Env.chaturl}/');
 }
 
 void setLogout() async {
@@ -79,6 +102,7 @@ Future<void> main() async {
   initNotifications();
 
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    print("Nachricht wird gesendet");
     showNotification();
   });
 

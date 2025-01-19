@@ -12,4 +12,10 @@ final class Env {
 
   @EnviedField(varName: 'BACKEND_URL', obfuscate: true)
   static String backendurl = _Env.backendurl;
+
+  @EnviedField(varName: 'CLOUD_URL', obfuscate: true)
+  static String cloudurl = _Env.cloudurl;
+
+  @EnviedField(varName: 'CHAT_URL', obfuscate: true)
+  static String chaturl = _Env.chaturl;
 }
