@@ -125,6 +125,8 @@ return [
 
     'api' => [
         'api_token' => env('API_TOKEN'),
-    ]
+    ],
+
+    'schedule' => env('SCHEDULE', '15'),
 
 ];

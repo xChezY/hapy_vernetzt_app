@@ -10,7 +10,8 @@ use Kreait\Firebase\Factory;
 class FCMController extends Controller
 {
 
-    public function sendDeviceToken(Request $request){
+    public function sendDeviceToken(Request $request)
+    {
 
         $request->validate([
             'Token' => 'required|string'
@@ -19,9 +20,9 @@ class FCMController extends Controller
         $factory = (new Factory)->withServiceAccount(base_path() . '/hapy-vernetzt-app-firebase-adminsdk.json');
         $messaging = $factory->createMessaging();
 
-        if(!FCMToken::where('token', $request->Token)->exists()){
+        if (!FCMToken::where('token', $request->Token)->exists()) {
             $result = $messaging->validateRegistrationTokens($request->Token);
-            if (!empty($result['valid'])){
+            if (!empty($result['valid'])) {
                 $fcmtoken = new FCMToken([
                     'token' => $request->Token
                 ]);
@@ -32,18 +33,25 @@ class FCMController extends Controller
         return response()->json(['message' => 'Token is invalid or already exists']);
     }
 
-    public function sendMessage() {
+    public function sendMessage()
+    {
         $factory = (new Factory)->withServiceAccount(base_path() . '/hapy-vernetzt-app-firebase-adminsdk.json');
         $messaging = $factory->createMessaging();
 
         $tokens = FCMToken::getAllTokens();
-        if (empty($tokens)){
+        if (empty($tokens)) {
             return response()->json(['message' => 'No tokens found']);
         }
-        $message = CloudMessage::new();
+        $message = CloudMessage::new()->withApnsConfig([
+            'payload' => [
+                'aps' => [
+                    'content-available' => 1,
+                ],
+            ]
+        ]);
         $report = $messaging->sendMulticast($message, $tokens);
 
-        foreach($report->invalidTokens() as $invalidtoken){
+        foreach ($report->invalidTokens() as $invalidtoken) {
             FCMToken::removeToken($invalidtoken);
         }
 

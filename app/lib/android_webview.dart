@@ -1,16 +1,19 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:hapy_vernetzt_app/env.dart';
 import 'package:hapy_vernetzt_app/main.dart';
 import 'package:hapy_vernetzt_app/notifications.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 
 class AndroidWebViewPage extends StatefulWidget {
   final String gobackjs = '''
-                              var element = document.querySelector('nav');
+                              const element = document.querySelector('nav');
                               if (element) {
                                 const arrowLink = document.createElement('a');
                                 arrowLink.id = 'goback'
@@ -57,9 +60,48 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
     androidcontroller!.setPlatformNavigationDelegate(AndroidNavigationDelegate(
       const PlatformNavigationDelegateCreationParams(),
     )
-      ..setOnNavigationRequest((NavigationRequest request) {
-        print(request.url);
+      ..setOnNavigationRequest((NavigationRequest request) async {
         if (!isWhitelistedUrl(request.url)) {
+          return NavigationDecision.prevent;
+        }
+        if (isChatAuthUrl(request.url)) {
+          final authresponse = await http.get(Uri.parse(request.url), headers: {
+            'Cookie': 'hameln-sessionid=$sessionid',
+          });
+          RegExp tokenRegex = RegExp(r'"credentialToken":"(.*?)"');
+          RegExp secretRegex = RegExp(r'"credentialSecret":"(.*?)"');
+          var tokenMatch = tokenRegex.firstMatch(authresponse.body);
+          var secretMatch = secretRegex.firstMatch(authresponse.body);
+
+          if (tokenMatch != null && secretMatch != null) {
+            var credentialToken = tokenMatch.group(1);
+            var credentialSecret = secretMatch.group(1);
+
+            final String loginbody = '''
+                {"message":"{\\"msg\\":\\"method\\",\\"id\\":\\"5\\",\\"method\\":\\"login\\",\\"params\\":[{\\"oauth\\":{\\"credentialToken\\":\\"$credentialToken\\",\\"credentialSecret\\":\\"$credentialSecret\\"}}]}"}
+              ''';
+
+            final oauthresponse = await http.post(
+              Uri.parse('${Env.chaturl}/api/v1/method.callAnon/login'),
+              headers: {
+                'Content-Type': 'application/json',
+                'Cookie': 'hameln-sessionid=$sessionid',
+              },
+              body: loginbody,
+            );
+            var jsonData = jsonDecode(oauthresponse.body);
+            var messageData = jsonDecode(jsonData['message']);
+            WebViewCookie id = WebViewCookie(
+                name: 'rc_session_uid',
+                value: messageData['result']['id'],
+                domain: ".hapy-vernetzt.de");
+            WebViewCookie token = WebViewCookie(
+                name: 'rc_session_token',
+                value: messageData['result']['token'],
+                domain: ".hapy-vernetzt.de");
+            WebViewCookieManager().setCookie(id);
+            WebViewCookieManager().setCookie(token);
+          }
           return NavigationDecision.prevent;
         }
         return NavigationDecision.navigate;
@@ -69,7 +111,6 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
       })
       ..setOnPageFinished(
         (url) async {
-          androidcontroller!.clearCache();
           androidcontroller!.runJavaScript(widget.removebannerjs);
           if (canGoBack(url)) {
             androidcontroller!.runJavaScript(widget.gobackjs);
@@ -89,18 +130,23 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
             await storage.write(key: 'logout', value: 'true');
             await storage.delete(key: 'sessionid');
           }
-          if (isChatUrl(url)) {
-            androidcontroller!.loadRequest(LoadRequestParams(uri: Uri.parse('${Env.appurl}/messages/?v=3')));
-          }
+          // if(isChatAuthUrl(url)){
+          //   androidcontroller!.loadRequest(LoadRequestParams(uri: Uri.parse("${Env.appurl}/messages/?v=3")));
+          // }
           _previousurl = url;
         },
       )
+      ..setOnWebResourceError((onWebResourceError) {
+        androidcontroller!.reload();
+      })
       ..setOnHttpError((HttpResponseError error) async {
         if (error.response!.statusCode == 403 &&
             error.request!.uri.toString() == '${Env.appurl}/logout/?v=3') {
           notificationid = -1;
           await storage.write(key: 'logout', value: 'true');
+          return;
         }
+        androidcontroller!.reload();
       }));
 
     return true;
