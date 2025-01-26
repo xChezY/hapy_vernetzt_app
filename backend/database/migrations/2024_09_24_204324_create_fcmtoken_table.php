@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('fcmtoken', function (Blueprint $table) {
             $table->id();
-            $table->string('token');
+            $table->string('token')->unique();
         });
     }
 

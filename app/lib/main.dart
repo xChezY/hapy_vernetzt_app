@@ -33,11 +33,7 @@ bool dontgoback = false;
 
 String starturl = '${Env.appurl}/signup/?v=3';
 
-final List whitelist = [
-  Env.appurl,
-  Env.cloudurl,
-  Env.chaturl
-];
+final List whitelist = [Env.appurl, Env.cloudurl, Env.chaturl];
 
 int notificationid = 0;
 
@@ -65,10 +61,10 @@ bool canGoBack(String url) {
 
 bool isWhitelistedUrl(String url) {
   for (final String domain in whitelist) {
-    final escapedDomain = RegExp.escape(domain
-        .replaceAll('https://', '')
-        .replaceAll('http://', ''));
-    final pattern = r'^https?:\/\/([a-zA-Z0-9-]+\.)?' + escapedDomain + r'(\/.*)?$';
+    final escapedDomain = RegExp.escape(
+        domain.replaceAll('https://', '').replaceAll('http://', ''));
+    final pattern =
+        r'^https?:\/\/([a-zA-Z0-9-]+\.)?' + escapedDomain + r'(\/.*)?$';
     if (RegExp(pattern).hasMatch(url)) {
       return true;
     }
@@ -76,8 +72,8 @@ bool isWhitelistedUrl(String url) {
   return false;
 }
 
-bool isChatUrl(String url) {
-  return url.startsWith('${Env.chaturl}/');
+bool isChatAuthUrl(String url) {
+  return url.startsWith('${Env.chaturl}/_oauth');
 }
 
 void setLogout() async {
@@ -102,7 +98,6 @@ Future<void> main() async {
   initNotifications();
 
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    print("Nachricht wird gesendet");
     showNotification();
   });
 
