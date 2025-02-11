@@ -17,7 +17,7 @@ class FCMController extends Controller
             'Token' => 'required|string'
         ]);
 
-        $factory = (new Factory)->withServiceAccount(base_path() . '/hapy-vernetzt-app-firebase-adminsdk.json');
+        $factory = (new Factory)->withServiceAccount(base_path() . '/firebase-admin-sdk.json');
         $messaging = $factory->createMessaging();
 
         if (!FCMToken::where('token', $request->Token)->exists()) {
@@ -35,7 +35,7 @@ class FCMController extends Controller
 
     public function sendMessage()
     {
-        $factory = (new Factory)->withServiceAccount(base_path() . '/hapy-vernetzt-app-firebase-adminsdk.json');
+        $factory = (new Factory)->withServiceAccount(base_path() . '/firebase-admin-sdk.json');
         $messaging = $factory->createMessaging();
 
         $tokens = FCMToken::getAllTokens();
