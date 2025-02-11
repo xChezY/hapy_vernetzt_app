@@ -1,29 +1,22 @@
 <?php
 
 use App\Http\Controllers\FCMController;
+use Illuminate\Support\Facades\Schedule;
 
-$apitoken = app()->config->get('app.schedule');
+$schedule_interval = app()->config->get('app.schedule');
 
-if ($apitoken == "MINUTE") {
-    Schedule::call(function () {
-        $controller = new FCMController();
-        $controller->sendMessage();
-    })->everyMinute();
-} else if ($apitoken == "15MINUTES") {
-    Schedule::call(function () {
-        $controller = new FCMController();
-        $controller->sendMessage();
-    })->every15Minutes();
-} else if ($apitoken == "HOUR") {
-    Schedule::call(function () {
-        $controller = new FCMController();
-        $controller->sendMessage();
-    })->everyHour();
-} else if ($apitoken == "DAY") {
-    Schedule::call(function () {
-        $controller = new FCMController();
-        $controller->sendMessage();
-    })->everyDay();
+$function  = function () {
+    (new FCMController())->sendMessage();
+};
+
+if ( $schedule_interval == "MINUTE") {
+    Schedule::call( $function )->everyMinute();
+} else if ( $schedule_interval == "15MINUTES") {
+    Schedule::call( $function )->everyFifteenMinutes();
+} else if ( $schedule_interval == "HOUR") {
+    Schedule::call( $function )->hourly();
+} else if ( $schedule_interval == "DAY") {
+    Schedule::call( $function )->daily();
 }
 
 
