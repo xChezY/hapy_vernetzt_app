@@ -1,5 +1,5 @@
 .env
-hapy-vernetzt-app-firebase-adminsdk.json
+firebase-admin-sdk.json
 
 .git
 node_modules
