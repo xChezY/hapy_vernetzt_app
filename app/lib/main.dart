@@ -33,7 +33,7 @@ bool dontgoback = false;
 
 String starturl = '${Env.appurl}/signup/?v=3';
 
-final List whitelist = [Env.appurl, Env.cloudurl, Env.chaturl];
+final List whitelist = [Env.appurl, Env.cloudurl, Env.chaturl, "https://hcaptcha.com"];
 
 int notificationid = 0;
 
@@ -53,13 +53,21 @@ bool canGoBack(String url) {
       url.startsWith('${Env.appurl}/login/?v=3') ||
       url.startsWith('${Env.appurl}/signup/?v=3') ||
       url.startsWith('${Env.appurl}/logout/?v=3') ||
-      url.startsWith('${Env.appurl}/password_reset/?v=3')) {
+      url.startsWith('${Env.appurl}/password_reset/?v=3') ||
+      url.startsWith('${Env.appurl}/messages/?v=3')) {
     return false;
   }
   return true;
 }
 
 bool isWhitelistedUrl(String url) {
+  debugPrint(url);
+  if (url == 'https://chat.hapy-vernetzt.de/'){
+    return false;
+  }
+  if (url.startsWith('https://www.hcaptcha.com/')) {
+    return false;
+  }
   for (final String domain in whitelist) {
     final escapedDomain = RegExp.escape(
         domain.replaceAll('https://', '').replaceAll('http://', ''));
