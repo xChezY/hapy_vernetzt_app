@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:hapy_vernetzt_app/env.dart';
 import 'package:hapy_vernetzt_app/main.dart';
 import 'package:hapy_vernetzt_app/notifications.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:http/http.dart' as http;
 
@@ -91,18 +90,11 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
             );
             var jsonData = jsonDecode(oauthresponse.body);
             var messageData = jsonDecode(jsonData['message']);
-            WebViewCookie id = WebViewCookie(
-                name: 'rc_session_uid',
-                value: messageData['result']['id'],
-                domain: ".hapy-vernetzt.de");
-            WebViewCookie token = WebViewCookie(
-                name: 'rc_session_token',
-                value: messageData['result']['token'],
-                domain: ".hapy-vernetzt.de");
-            WebViewCookieManager().setCookie(id);
-            WebViewCookieManager().setCookie(token);
+            androidcontroller!.runJavaScript('''
+              localStorage.setItem('Meteor.userId', '${messageData['result']['id']}');
+              localStorage.setItem('Meteor.loginToken', '${messageData['result']['token']}');
+            ''');
           }
-          return NavigationDecision.prevent;
         }
         return NavigationDecision.navigate;
       })
@@ -130,9 +122,9 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
             await storage.write(key: 'logout', value: 'true');
             await storage.delete(key: 'sessionid');
           }
-          // if(isChatAuthUrl(url)){
-          //   androidcontroller!.loadRequest(LoadRequestParams(uri: Uri.parse("${Env.appurl}/messages/?v=3")));
-          // }
+          if(isChatAuthUrl(url)){
+            androidcontroller!.loadRequest(LoadRequestParams(uri: Uri.parse("${Env.appurl}/messages/?v=3")));
+          }
           _previousurl = url;
         },
       )
