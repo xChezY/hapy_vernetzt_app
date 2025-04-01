@@ -10,7 +10,7 @@ import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 import 'package:http/http.dart' as http;
 
-import 'main.dart';
+import '../main.dart';
 
 class IOSWebViewPage extends StatefulWidget {
   final String gobackjs = '''
@@ -154,8 +154,11 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return CupertinoApp(
       debugShowCheckedModeBanner: false,
+      theme: CupertinoThemeData(
+        primaryColor: Env.primaryColorObj,
+      ),
       home: FutureBuilder(
           future: _iOSControllerFuture(),
           builder: (context, snapshot) {
@@ -181,29 +184,19 @@ Widget iOSWebView(BuildContext context, ValueNotifier<int> progress,
                 return LinearProgressIndicator(
                   value: progress / 100,
                   backgroundColor: Colors.grey[200],
-                  valueColor: const AlwaysStoppedAnimation<Color>(
-                      Color.fromRGBO(47, 133, 90, 1)),
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(Env.primaryColorObj),
                 );
               }),
           Expanded(
-            child: ValueListenableBuilder(
-                valueListenable: progress,
-                builder: (context, value, child) {
-                  if (snapshot.connectionState == ConnectionState.done) {
-                    return value == 100 || (value <= 50 && value >= 1)
-                        ? WebKitWebViewWidget(WebKitWebViewWidgetCreationParams(
-                                controller: ioscontroller!))
-                            .build(context)
-                        : const Center(
-                            child: CupertinoActivityIndicator(
-                            color: Color.fromRGBO(47, 133, 90, 1),
-                          ));
-                  }
-                  return const Center(
-                      child: CupertinoActivityIndicator(
-                    color: Color.fromRGBO(47, 133, 90, 1),
-                  ));
-                }),
+            child: snapshot.connectionState == ConnectionState.done
+                ? WebKitWebViewWidget(WebKitWebViewWidgetCreationParams(
+                        controller: ioscontroller!))
+                    .build(context)
+                : Center(
+                    child: CupertinoActivityIndicator(
+                    color: Env.primaryColorObj,
+                  )),
           ),
         ],
       ),
