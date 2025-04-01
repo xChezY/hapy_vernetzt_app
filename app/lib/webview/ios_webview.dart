@@ -173,6 +173,7 @@ Widget iOSWebView(BuildContext context, ValueNotifier<int> progress,
   return CupertinoPageScaffold(
     backgroundColor: Colors.white,
     child: SafeArea(
+      bottom: false,
       child: Column(
         children: [
           ValueListenableBuilder(
