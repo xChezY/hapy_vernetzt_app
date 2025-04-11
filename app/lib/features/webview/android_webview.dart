@@ -2,13 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:hapy_vernetzt_app/env.dart';
+import 'package:hapy_vernetzt_app/core/env.dart';
 import 'package:hapy_vernetzt_app/main.dart';
-import 'package:hapy_vernetzt_app/notifications.dart';
+import 'package:hapy_vernetzt_app/features/notifications/notifications.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:http/http.dart' as http;
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
-import 'package:hapy_vernetzt_app/webview/webview_js.dart';
+import 'package:hapy_vernetzt_app/features/webview/webview_js.dart';
 
 class AndroidWebViewPage extends StatefulWidget {
   const AndroidWebViewPage({super.key});

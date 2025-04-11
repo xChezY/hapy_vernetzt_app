@@ -5,12 +5,12 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:hapy_vernetzt_app/webview/android_webview.dart';
-import 'package:hapy_vernetzt_app/env.dart';
-import 'package:hapy_vernetzt_app/firebase.dart';
-import 'package:hapy_vernetzt_app/firebase_options.dart';
-import 'package:hapy_vernetzt_app/notifications.dart';
-import 'package:hapy_vernetzt_app/webview/ios_webview.dart';
+import 'package:hapy_vernetzt_app/features/webview/android_webview.dart';
+import 'package:hapy_vernetzt_app/core/env.dart';
+import 'package:hapy_vernetzt_app/core/firebase.dart';
+import 'package:hapy_vernetzt_app/core/firebase_options.dart';
+import 'package:hapy_vernetzt_app/features/notifications/notifications.dart';
+import 'package:hapy_vernetzt_app/features/webview/ios_webview.dart';
 import 'package:webview_cookie_manager/webview_cookie_manager.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
@@ -33,7 +33,12 @@ bool dontgoback = false;
 
 String starturl = '${Env.appurl}/signup/?v=3';
 
-final List whitelist = [Env.appurl, Env.cloudurl, Env.chaturl, "https://hcaptcha.com"];
+final List whitelist = [
+  Env.appurl,
+  Env.cloudurl,
+  Env.chaturl,
+  "https://hcaptcha.com"
+];
 
 int notificationid = 0;
 
@@ -62,7 +67,7 @@ bool canGoBack(String url) {
 
 bool isWhitelistedUrl(String url) {
   debugPrint(url);
-  if (url == 'https://chat.hapy-vernetzt.de/'){
+  if (url == 'https://chat.hapy-vernetzt.de/') {
     return false;
   }
   if (url.startsWith('https://www.hcaptcha.com/')) {
