@@ -7,28 +7,10 @@ import 'package:hapy_vernetzt_app/main.dart';
 import 'package:hapy_vernetzt_app/notifications.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:http/http.dart' as http;
-
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
+import 'package:hapy_vernetzt_app/webview/webview_js.dart';
 
 class AndroidWebViewPage extends StatefulWidget {
-  final String gobackjs = '''
-                              const element = document.querySelector('nav');
-                              if (element) {
-                                const arrowLink = document.createElement('a');
-                                arrowLink.id = 'goback'
-                                arrowLink.href = 'javascript:window.history.back();';
-                                arrowLink.style = 'padding: 8px';   
-                                arrowLink.innerHTML = `<i class="fas fa-chevron-left"></i>`;
-                                element.prepend(arrowLink);
-                              }
-                            ''';
-
-  final String removebannerjs = '''
-                                  if(document.querySelector('footer')) {
-                                    document.querySelector('footer').remove();
-                                  }
-                                ''';
-
   const AndroidWebViewPage({super.key});
 
   @override
@@ -103,9 +85,9 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
       })
       ..setOnPageFinished(
         (url) async {
-          androidcontroller!.runJavaScript(widget.removebannerjs);
+          androidcontroller!.runJavaScript(WebViewJS.removeBannerJS);
           if (canGoBack(url)) {
-            androidcontroller!.runJavaScript(widget.gobackjs);
+            androidcontroller!.runJavaScript(WebViewJS.goBackJS);
           }
           if (_previousurl == '${Env.appurl}/login/?v=3' &&
               url == '${Env.appurl}/dashboard/?v=3') {
@@ -122,8 +104,9 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
             await storage.write(key: 'logout', value: 'true');
             await storage.delete(key: 'sessionid');
           }
-          if(isChatAuthUrl(url)){
-            androidcontroller!.loadRequest(LoadRequestParams(uri: Uri.parse("${Env.appurl}/messages/?v=3")));
+          if (isChatAuthUrl(url)) {
+            androidcontroller!.loadRequest(LoadRequestParams(
+                uri: Uri.parse("${Env.appurl}/messages/?v=3")));
           }
           _previousurl = url;
         },
@@ -148,6 +131,9 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primaryColor: Env.primaryColorObj,
+      ),
       home: FutureBuilder(
           future: _androidControllerFuture(),
           builder: (context, snapshot) {
@@ -169,6 +155,7 @@ Widget androidWebView(BuildContext context, ValueNotifier<int> progress,
     child: Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             ValueListenableBuilder(
@@ -180,30 +167,19 @@ Widget androidWebView(BuildContext context, ValueNotifier<int> progress,
                   return LinearProgressIndicator(
                     value: progress / 100,
                     backgroundColor: Colors.grey[200],
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                        Color.fromRGBO(47, 133, 90, 1)),
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(Env.primaryColorObj),
                   );
                 }),
             Expanded(
-              child: ValueListenableBuilder(
-                  valueListenable: progress,
-                  builder: (context, value, child) {
-                    if (snapshot.connectionState == ConnectionState.done) {
-                      return value == 100 || (value <= 50 && value >= 1)
-                          ? AndroidWebViewWidget(
-                                  AndroidWebViewWidgetCreationParams(
-                                      controller: androidcontroller!))
-                              .build(context)
-                          : const Center(
-                              child: CircularProgressIndicator(
-                              color: Color.fromRGBO(47, 133, 90, 1),
-                            ));
-                    }
-                    return const Center(
-                        child: CircularProgressIndicator(
-                      color: Color.fromRGBO(47, 133, 90, 1),
-                    ));
-                  }),
+              child: snapshot.connectionState == ConnectionState.done
+                  ? AndroidWebViewWidget(AndroidWebViewWidgetCreationParams(
+                          controller: androidcontroller!))
+                      .build(context)
+                  : Center(
+                      child: CircularProgressIndicator(
+                      color: Env.primaryColorObj,
+                    )),
             ),
           ],
         ),
