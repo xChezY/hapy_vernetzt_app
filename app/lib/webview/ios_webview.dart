@@ -9,27 +9,11 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 import 'package:http/http.dart' as http;
+import 'package:hapy_vernetzt_app/webview/webview_js.dart';
 
 import '../main.dart';
 
 class IOSWebViewPage extends StatefulWidget {
-  final String gobackjs = '''
-                              var element = document.querySelector('nav');
-                              if (element) {
-                                const arrowLink = document.createElement('a');
-                                arrowLink.id = 'goback'
-                                arrowLink.href = 'javascript:window.history.back();';
-                                arrowLink.style = 'padding: 8px';   
-                                arrowLink.innerHTML = `<i class="fas fa-chevron-left"></i>`;
-                                element.prepend(arrowLink);
-                              }
-                            ''';
-
-  final String removebannerjs = '''
-                                  if(document.querySelector('footer')) {
-                                    document.querySelector('footer').remove();
-                                  }
-                                ''';
 
   const IOSWebViewPage({super.key});
 
@@ -114,9 +98,9 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
       ..setOnPageFinished(
         (url) async {
           ioscontroller!.clearCache();
-          ioscontroller!.runJavaScript(widget.removebannerjs);
+          ioscontroller!.runJavaScript(WebViewJS.removeBannerJS);
           if (canGoBack(url)) {
-            ioscontroller!.runJavaScript(widget.gobackjs);
+            ioscontroller!.runJavaScript(WebViewJS.goBackJS);
           }
           if (_previousurl == '${Env.appurl}/login/?v=3' &&
               url == '${Env.appurl}/dashboard/?v=3') {
