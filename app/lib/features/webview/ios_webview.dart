@@ -3,18 +3,17 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:hapy_vernetzt_app/env.dart';
-import 'package:hapy_vernetzt_app/notifications.dart';
+import 'package:hapy_vernetzt_app/core/env.dart';
+import 'package:hapy_vernetzt_app/features/notifications/notifications.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 import 'package:http/http.dart' as http;
-import 'package:hapy_vernetzt_app/webview/webview_js.dart';
+import 'package:hapy_vernetzt_app/features/webview/webview_js.dart';
 
-import '../main.dart';
+import '../../../main.dart';
 
 class IOSWebViewPage extends StatefulWidget {
-
   const IOSWebViewPage({super.key});
 
   @override
