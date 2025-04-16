@@ -26,17 +26,22 @@ class UrlHandler {
   static bool isWhitelistedUrl(String url) {
     debugPrint('Checking URL whitelist: $url');
 
-    // TODO: Review these special cases from the original code.
-    // Why is chat.hapy-vernetzt.de explicitly blocked if Env.chaturl is whitelisted?
+    // Explicitly prevent navigation TO specific URLs even if their domains are whitelisted.
+    // This is necessary because these domains might be needed for loading resources (e.g., in iframes),
+    // but direct navigation should be blocked.
+
+    // Prevent direct navigation to the base chat URL (used for auth token retrieval).
     if (url == 'https://chat.hapy-vernetzt.de/') {
+      debugPrint('Preventing direct navigation to chat base URL: $url');
       return false;
     }
-    // Why is hcaptcha.com blocked if it's also in the whitelist array?
+    // Prevent direct navigation to hCaptcha URLs.
     if (url.startsWith('https://www.hcaptcha.com/')) {
-      // Assuming false based on original code, but seems contradictory.
+      debugPrint('Preventing direct navigation to hCaptcha URL: $url');
       return false;
     }
 
+    // Check if the URL belongs to any whitelisted domain (allows resource loading).
     for (final String domain in whitelist) {
       // Normalize domain by removing scheme for regex
       final domainWithoutScheme =
