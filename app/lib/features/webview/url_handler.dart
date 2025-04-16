@@ -31,7 +31,7 @@ class UrlHandler {
     // but direct navigation should be blocked.
 
     // Prevent direct navigation to the base chat URL (used for auth token retrieval).
-    if (url == 'https://chat.hapy-vernetzt.de/') {
+    if (url == '${Env.chaturl}/') {
       debugPrint('Preventing direct navigation to chat base URL: $url');
       return false;
     }
