@@ -9,6 +9,8 @@ import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:http/http.dart' as http;
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 import 'package:hapy_vernetzt_app/features/webview/webview_js.dart';
+import 'package:webview_cookie_manager/webview_cookie_manager.dart';
+import 'package:hapy_vernetzt_app/features/webview/url_handler.dart';
 
 class AndroidWebViewPage extends StatefulWidget {
   const AndroidWebViewPage({super.key});
@@ -20,6 +22,25 @@ class AndroidWebViewPage extends StatefulWidget {
 class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
   String _previousurl = '';
   final ValueNotifier<int> _progress = ValueNotifier<int>(0);
+  bool _dontGoBack = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Register callback with NotificationHandler
+    NotificationHandler.registerSetDontGoBackCallback((value) {
+      setState(() {
+        _dontGoBack = value;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    // Unregister callback
+    NotificationHandler.unregisterSetDontGoBackCallback();
+    super.dispose();
+  }
 
   Future<bool> _androidControllerFuture() async {
     String? sessionid = await storage.read(key: 'sessionid');
@@ -42,10 +63,10 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
       const PlatformNavigationDelegateCreationParams(),
     )
       ..setOnNavigationRequest((NavigationRequest request) async {
-        if (!isWhitelistedUrl(request.url)) {
+        if (!UrlHandler.isWhitelistedUrl(request.url)) {
           return NavigationDecision.prevent;
         }
-        if (isChatAuthUrl(request.url)) {
+        if (UrlHandler.isChatAuthUrl(request.url)) {
           final authresponse = await http.get(Uri.parse(request.url), headers: {
             'Cookie': 'hameln-sessionid=$sessionid',
           });
@@ -86,8 +107,15 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
       ..setOnPageFinished(
         (url) async {
           androidcontroller!.runJavaScript(WebViewJS.removeBannerJS);
-          if (canGoBack(url)) {
+          bool shouldShowBackButton =
+              !_dontGoBack && UrlHandler.canGoBackBasedOnUrl(url);
+          if (shouldShowBackButton) {
             androidcontroller!.runJavaScript(WebViewJS.goBackJS);
+          }
+          if (_dontGoBack) {
+            setState(() {
+              _dontGoBack = false;
+            });
           }
           if (_previousurl == '${Env.appurl}/login/?v=3' &&
               url == '${Env.appurl}/dashboard/?v=3') {
@@ -104,7 +132,7 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
             await storage.write(key: 'logout', value: 'true');
             await storage.delete(key: 'sessionid');
           }
-          if (isChatAuthUrl(url)) {
+          if (UrlHandler.isChatAuthUrl(url)) {
             androidcontroller!.loadRequest(LoadRequestParams(
                 uri: Uri.parse("${Env.appurl}/messages/?v=3")));
           }
@@ -137,18 +165,31 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
       home: FutureBuilder(
           future: _androidControllerFuture(),
           builder: (context, snapshot) {
-            return androidWebView(context, _progress, snapshot, _previousurl);
+            return androidWebView(context, _progress, snapshot, _previousurl,
+                (val) => setState(() => _dontGoBack = val), _dontGoBack);
           }),
     );
   }
 }
 
-Widget androidWebView(BuildContext context, ValueNotifier<int> progress,
-    AsyncSnapshot<bool> snapshot, String previousurl) {
+Widget androidWebView(
+    BuildContext context,
+    ValueNotifier<int> progress,
+    AsyncSnapshot<bool> snapshot,
+    String previousurl,
+    Function(bool) setDontGoBack,
+    bool dontGoBackState) {
   return PopScope(
     onPopInvokedWithResult: (didPop, result) async {
-      if (canGoBack(previousurl)) {
-        androidcontroller!.goBack();
+      bool allowPop = false;
+      if (!dontGoBackState) {
+        if (UrlHandler.canGoBackBasedOnUrl(previousurl)) {
+          androidcontroller!.goBack();
+        } else {
+          allowPop = true;
+        }
+      } else {
+        setDontGoBack(false);
       }
     },
     canPop: false,

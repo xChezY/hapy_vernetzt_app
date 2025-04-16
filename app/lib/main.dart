@@ -14,6 +14,7 @@ import 'package:hapy_vernetzt_app/features/webview/ios_webview.dart';
 import 'package:webview_cookie_manager/webview_cookie_manager.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
+import 'package:hapy_vernetzt_app/features/webview/url_handler.dart';
 
 final FlutterLocalNotificationsPlugin flutterlocalnotificationsplugin =
     FlutterLocalNotificationsPlugin();
@@ -29,16 +30,7 @@ AndroidWebViewController? androidcontroller;
 
 FlutterSecureStorage storage = const FlutterSecureStorage();
 
-bool dontgoback = false;
-
 String starturl = '${Env.appurl}/signup/?v=3';
-
-final List whitelist = [
-  Env.appurl,
-  Env.cloudurl,
-  Env.chaturl,
-  "https://hcaptcha.com"
-];
 
 int notificationid = 0;
 
@@ -47,46 +39,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   initNotifications();
   showNotification();
-}
-
-bool canGoBack(String url) {
-  if (dontgoback) {
-    dontgoback = false;
-    return false;
-  }
-  if (url.startsWith('${Env.appurl}/dashboard/?v=3') ||
-      url.startsWith('${Env.appurl}/login/?v=3') ||
-      url.startsWith('${Env.appurl}/signup/?v=3') ||
-      url.startsWith('${Env.appurl}/logout/?v=3') ||
-      url.startsWith('${Env.appurl}/password_reset/?v=3') ||
-      url.startsWith('${Env.appurl}/messages/?v=3')) {
-    return false;
-  }
-  return true;
-}
-
-bool isWhitelistedUrl(String url) {
-  debugPrint(url);
-  if (url == 'https://chat.hapy-vernetzt.de/') {
-    return false;
-  }
-  if (url.startsWith('https://www.hcaptcha.com/')) {
-    return false;
-  }
-  for (final String domain in whitelist) {
-    final escapedDomain = RegExp.escape(
-        domain.replaceAll('https://', '').replaceAll('http://', ''));
-    final pattern =
-        r'^https?:\/\/([a-zA-Z0-9-]+\.)?' + escapedDomain + r'(\/.*)?$';
-    if (RegExp(pattern).hasMatch(url)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool isChatAuthUrl(String url) {
-  return url.startsWith('${Env.chaturl}/_oauth');
 }
 
 void setLogout() async {
