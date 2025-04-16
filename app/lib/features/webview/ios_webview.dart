@@ -10,6 +10,8 @@ import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 import 'package:http/http.dart' as http;
 import 'package:hapy_vernetzt_app/features/webview/webview_js.dart';
+import 'package:webview_cookie_manager/webview_cookie_manager.dart';
+import 'package:hapy_vernetzt_app/features/webview/url_handler.dart';
 
 import '../../../main.dart';
 
@@ -23,6 +25,25 @@ class IOSWebViewPage extends StatefulWidget {
 class _IOSWebViewPageState extends State<IOSWebViewPage> {
   String _previousurl = '';
   final ValueNotifier<int> _progress = ValueNotifier<int>(0);
+  bool _dontGoBack = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Register callback with NotificationHandler
+    NotificationHandler.registerSetDontGoBackCallback((value) {
+      setState(() {
+        _dontGoBack = value;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    // Unregister callback
+    NotificationHandler.unregisterSetDontGoBackCallback();
+    super.dispose();
+  }
 
   Future<bool> _iOSControllerFuture() async {
     String? sessionid = await storage.read(key: 'sessionid');
@@ -45,10 +66,10 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
       const PlatformNavigationDelegateCreationParams(),
     )
       ..setOnNavigationRequest((NavigationRequest request) async {
-        if (!isWhitelistedUrl(request.url)) {
+        if (!UrlHandler.isWhitelistedUrl(request.url)) {
           return NavigationDecision.prevent;
         }
-        if (isChatAuthUrl(request.url)) {
+        if (UrlHandler.isChatAuthUrl(request.url)) {
           final authresponse = await http.get(Uri.parse(request.url), headers: {
             'Cookie': 'hameln-sessionid=$sessionid',
           });
@@ -98,8 +119,15 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
         (url) async {
           ioscontroller!.clearCache();
           ioscontroller!.runJavaScript(WebViewJS.removeBannerJS);
-          if (canGoBack(url)) {
+          bool shouldShowBackButton =
+              !_dontGoBack && UrlHandler.canGoBackBasedOnUrl(url);
+          if (shouldShowBackButton) {
             ioscontroller!.runJavaScript(WebViewJS.goBackJS);
+          }
+          if (_dontGoBack) {
+            setState(() {
+              _dontGoBack = false;
+            });
           }
           if (_previousurl == '${Env.appurl}/login/?v=3' &&
               url == '${Env.appurl}/dashboard/?v=3') {

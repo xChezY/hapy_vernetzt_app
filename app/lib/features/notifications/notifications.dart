@@ -123,11 +123,27 @@ void initNotifications() async {
   }
 }
 
+class NotificationHandler {
+  static Function(bool)? _setDontGoBackCallback;
+
+  static void registerSetDontGoBackCallback(Function(bool) callback) {
+    _setDontGoBackCallback = callback;
+  }
+
+  static void unregisterSetDontGoBackCallback() {
+    _setDontGoBackCallback = null;
+  }
+
+  static void setDontGoBack(bool value) {
+    _setDontGoBackCallback?.call(value);
+  }
+}
+
 Future<void> onDidReceiveNotificationResponse(
     NotificationResponse notificationResponse) async {
   final String? payload = notificationResponse.payload;
   if (notificationResponse.payload != null) {
-    dontgoback = true;
+    NotificationHandler.setDontGoBack(true);
     if (Platform.isIOS) {
       await ioscontroller!.loadRequest(
           LoadRequestParams(uri: Uri.parse("${Env.appurl}${payload!}")));
