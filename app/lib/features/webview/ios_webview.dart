@@ -4,9 +4,11 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hapy_vernetzt_app/main.dart'
-    show storage, selectnotificationstream, cookieManager;
+    show storage, selectnotificationstream;
+    import 'package:webview_cookie_manager/webview_cookie_manager.dart';
 import 'package:hapy_vernetzt_app/core/env.dart';
-import 'package:hapy_vernetzt_app/features/notifications/notifications.dart';
+import 'package:hapy_vernetzt_app/features/notifications/notifications.dart'
+    show isSessiondIDValid;
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 import 'package:http/http.dart' as http;
@@ -131,8 +133,8 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
                   ..httpOnly = false
                   ..secure = true;
 
-            // Use cookieManager.setCookies with a List<Cookie>
-            await cookieManager.setCookies([idCookie, tokenCookie]);
+            // Use global cookieManager again
+            await WebviewCookieManager().setCookies([idCookie, tokenCookie]);
           }
           return NavigationDecision.prevent;
         }
@@ -162,7 +164,8 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
           if (_previousurl == '${Env.appurl}/login/?v=3' &&
               url == '${Env.appurl}/dashboard/?v=3') {
             await storage.write(key: 'logout', value: 'false');
-            List<Cookie> cookies = await cookieManager.getCookies(url);
+            // Use global cookieManager again
+            List<Cookie> cookies = await WebviewCookieManager().getCookies(url);
             for (Cookie cookie in cookies) {
               if (cookie.name == 'hameln-sessionid') {
                 await storage.write(key: 'sessionid', value: cookie.value);
