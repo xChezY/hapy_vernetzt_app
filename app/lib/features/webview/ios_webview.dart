@@ -3,17 +3,19 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:hapy_vernetzt_app/main.dart'
+    show storage, selectnotificationstream, cookieManager;
 import 'package:hapy_vernetzt_app/core/env.dart';
 import 'package:hapy_vernetzt_app/features/notifications/notifications.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 import 'package:http/http.dart' as http;
 import 'package:hapy_vernetzt_app/features/webview/webview_js.dart';
-import 'package:webview_cookie_manager/webview_cookie_manager.dart';
 import 'package:hapy_vernetzt_app/features/webview/url_handler.dart';
+import 'dart:async';
 
 import '../../../main.dart';
+import 'package:hapy_vernetzt_app/core/services/notification_service.dart';
 
 class IOSWebViewPage extends StatefulWidget {
   const IOSWebViewPage({super.key});
@@ -23,6 +25,9 @@ class IOSWebViewPage extends StatefulWidget {
 }
 
 class _IOSWebViewPageState extends State<IOSWebViewPage> {
+  WebKitWebViewController? _controller;
+  StreamSubscription<String?>? _notificationSubscription;
+
   String _previousurl = '';
   final ValueNotifier<int> _progress = ValueNotifier<int>(0);
   bool _dontGoBack = false;
@@ -30,23 +35,35 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
   @override
   void initState() {
     super.initState();
-    // Register callback with NotificationHandler
-    NotificationHandler.registerSetDontGoBackCallback((value) {
-      setState(() {
-        _dontGoBack = value;
-      });
+    // Register callback with NotificationService instance
+    NotificationService().registerSetDontGoBackCallback((value) {
+      if (mounted) {
+        setState(() {
+          _dontGoBack = value;
+        });
+      }
+    });
+    // Listen to notification stream
+    _notificationSubscription = selectnotificationstream.stream.listen((url) {
+      if (url != null && url.isNotEmpty && _controller != null && mounted) {
+        debugPrint('Received URL from notification stream: $url');
+        _controller!.loadRequest(LoadRequestParams(uri: Uri.parse(url)));
+      }
     });
   }
 
   @override
   void dispose() {
-    // Unregister callback
-    NotificationHandler.unregisterSetDontGoBackCallback();
+    // Unregister callback from NotificationService instance
+    NotificationService().unregisterSetDontGoBackCallback();
+    // Cancel stream subscription
+    _notificationSubscription?.cancel();
     super.dispose();
   }
 
   Future<bool> _iOSControllerFuture() async {
     String? sessionid = await storage.read(key: 'sessionid');
+    String starturl = '${Env.appurl}/signup/?v=3'; // Localize starturl
 
     if (sessionid != null) {
       if (await isSessiondIDValid()) {
@@ -56,13 +73,15 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
       }
     }
 
-    ioscontroller =
+    // Initialize local controller
+    _controller =
         WebKitWebViewController(WebKitWebViewControllerCreationParams())
           ..setJavaScriptMode(JavaScriptMode.unrestricted)
           ..enableZoom(false)
           ..loadRequest(LoadRequestParams(uri: Uri.parse(starturl)));
 
-    ioscontroller!.setPlatformNavigationDelegate(WebKitNavigationDelegate(
+    // Use local controller
+    _controller!.setPlatformNavigationDelegate(WebKitNavigationDelegate(
       const PlatformNavigationDelegateCreationParams(),
     )
       ..setOnNavigationRequest((NavigationRequest request) async {
@@ -97,37 +116,48 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
             var jsonData = jsonDecode(oauthresponse.body);
             var messageData = jsonDecode(jsonData['message']);
 
-            WebViewCookie id = WebViewCookie(
-                name: 'rc_session_uid',
-                value: messageData['result']['id'],
-                domain: ".hapy-vernetzt.de");
-            WebViewCookie token = WebViewCookie(
-                name: 'rc_session_token',
-                value: messageData['result']['token'],
-                domain: ".hapy-vernetzt.de");
-            WebViewCookieManager().setCookie(id);
-            WebViewCookieManager().setCookie(token);
+            // Create dart:io Cookie objects
+            final idCookie =
+                Cookie('rc_session_uid', messageData['result']['id'])
+                  ..domain = Env.baseDomain
+                  ..path = "/"
+                  ..httpOnly = false
+                  ..secure = true;
+
+            final tokenCookie =
+                Cookie('rc_session_token', messageData['result']['token'])
+                  ..domain = Env.baseDomain
+                  ..path = "/"
+                  ..httpOnly = false
+                  ..secure = true;
+
+            // Use cookieManager.setCookies with a List<Cookie>
+            await cookieManager.setCookies([idCookie, tokenCookie]);
           }
           return NavigationDecision.prevent;
         }
         return NavigationDecision.navigate;
       })
       ..setOnProgress((int progress) {
-        _progress.value = progress;
+        if (mounted) {
+          _progress.value = progress;
+        }
       })
       ..setOnPageFinished(
         (url) async {
-          ioscontroller!.clearCache();
-          ioscontroller!.runJavaScript(WebViewJS.removeBannerJS);
+          _controller!.clearCache();
+          _controller!.runJavaScript(WebViewJS.removeBannerJS);
           bool shouldShowBackButton =
               !_dontGoBack && UrlHandler.canGoBackBasedOnUrl(url);
           if (shouldShowBackButton) {
-            ioscontroller!.runJavaScript(WebViewJS.goBackJS);
+            _controller!.runJavaScript(WebViewJS.goBackJS);
           }
           if (_dontGoBack) {
-            setState(() {
-              _dontGoBack = false;
-            });
+            if (mounted) {
+              setState(() {
+                _dontGoBack = false;
+              });
+            }
           }
           if (_previousurl == '${Env.appurl}/login/?v=3' &&
               url == '${Env.appurl}/dashboard/?v=3') {
@@ -140,7 +170,6 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
             }
           }
           if (url == '${Env.appurl}/logout/?v=3') {
-            notificationid = -1;
             await storage.write(key: 'logout', value: 'true');
             await storage.delete(key: 'sessionid');
           }
@@ -148,16 +177,15 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
         },
       )
       ..setOnWebResourceError((onWebResourceError) {
-        ioscontroller!.reload();
+        _controller!.reload();
       })
       ..setOnHttpError((HttpResponseError error) async {
         if (error.response!.statusCode == 403 &&
             error.request!.uri.toString() == '${Env.appurl}/logout/?v=3') {
-          notificationid = -1;
           await storage.write(key: 'logout', value: 'true');
           return;
         }
-        ioscontroller!.reload();
+        _controller!.reload();
       }));
 
     return true;
@@ -173,14 +201,15 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
       home: FutureBuilder(
           future: _iOSControllerFuture(),
           builder: (context, snapshot) {
-            return iOSWebView(context, _progress, snapshot);
+            // Pass local controller to widget function
+            return iOSWebView(context, _progress, snapshot, _controller);
           }),
     );
   }
 }
 
 Widget iOSWebView(BuildContext context, ValueNotifier<int> progress,
-    AsyncSnapshot<bool> snapshot) {
+    AsyncSnapshot<bool> snapshot, WebKitWebViewController? controller) {
   return CupertinoPageScaffold(
     backgroundColor: Colors.white,
     child: SafeArea(
@@ -201,9 +230,10 @@ Widget iOSWebView(BuildContext context, ValueNotifier<int> progress,
                 );
               }),
           Expanded(
-            child: snapshot.connectionState == ConnectionState.done
+            child: snapshot.connectionState == ConnectionState.done &&
+                    controller != null
                 ? WebKitWebViewWidget(WebKitWebViewWidgetCreationParams(
-                        controller: ioscontroller!))
+                        controller: controller))
                     .build(context)
                 : Center(
                     child: CupertinoActivityIndicator(

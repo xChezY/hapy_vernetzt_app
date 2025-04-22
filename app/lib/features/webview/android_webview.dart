@@ -3,14 +3,17 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:hapy_vernetzt_app/core/env.dart';
-import 'package:hapy_vernetzt_app/main.dart';
-import 'package:hapy_vernetzt_app/features/notifications/notifications.dart';
+import 'package:hapy_vernetzt_app/main.dart'
+    show storage, selectnotificationstream, cookieManager;
+import 'package:hapy_vernetzt_app/core/services/notification_service.dart';
+import 'package:hapy_vernetzt_app/features/notifications/notifications.dart'
+    show isSessiondIDValid;
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:http/http.dart' as http;
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 import 'package:hapy_vernetzt_app/features/webview/webview_js.dart';
-import 'package:webview_cookie_manager/webview_cookie_manager.dart';
 import 'package:hapy_vernetzt_app/features/webview/url_handler.dart';
+import 'dart:async';
 
 class AndroidWebViewPage extends StatefulWidget {
   const AndroidWebViewPage({super.key});
@@ -20,6 +23,9 @@ class AndroidWebViewPage extends StatefulWidget {
 }
 
 class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
+  AndroidWebViewController? _controller;
+  StreamSubscription<String?>? _notificationSubscription;
+
   String _previousurl = '';
   final ValueNotifier<int> _progress = ValueNotifier<int>(0);
   bool _dontGoBack = false;
@@ -27,23 +33,35 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
   @override
   void initState() {
     super.initState();
-    // Register callback with NotificationHandler
-    NotificationHandler.registerSetDontGoBackCallback((value) {
-      setState(() {
-        _dontGoBack = value;
-      });
+    // Register callback with NotificationService instance
+    NotificationService().registerSetDontGoBackCallback((value) {
+      if (mounted) {
+        setState(() {
+          _dontGoBack = value;
+        });
+      }
+    });
+    // Listen to notification stream
+    _notificationSubscription = selectnotificationstream.stream.listen((url) {
+      if (url != null && url.isNotEmpty && _controller != null && mounted) {
+        debugPrint('Received URL from notification stream: $url');
+        _controller!.loadRequest(LoadRequestParams(uri: Uri.parse(url)));
+      }
     });
   }
 
   @override
   void dispose() {
-    // Unregister callback
-    NotificationHandler.unregisterSetDontGoBackCallback();
+    // Unregister callback from NotificationService instance
+    NotificationService().unregisterSetDontGoBackCallback();
+    // Cancel stream subscription
+    _notificationSubscription?.cancel();
     super.dispose();
   }
 
   Future<bool> _androidControllerFuture() async {
     String? sessionid = await storage.read(key: 'sessionid');
+    String starturl = '${Env.appurl}/signup/?v=3';
 
     if (sessionid != null) {
       if (await isSessiondIDValid()) {
@@ -53,13 +71,15 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
       }
     }
 
-    androidcontroller =
+    // Initialize local controller
+    _controller =
         AndroidWebViewController(AndroidWebViewControllerCreationParams())
           ..setJavaScriptMode(JavaScriptMode.unrestricted)
           ..enableZoom(false)
           ..loadRequest(LoadRequestParams(uri: Uri.parse(starturl)));
 
-    androidcontroller!.setPlatformNavigationDelegate(AndroidNavigationDelegate(
+    // Use local controller
+    _controller!.setPlatformNavigationDelegate(AndroidNavigationDelegate(
       const PlatformNavigationDelegateCreationParams(),
     )
       ..setOnNavigationRequest((NavigationRequest request) async {
@@ -93,7 +113,7 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
             );
             var jsonData = jsonDecode(oauthresponse.body);
             var messageData = jsonDecode(jsonData['message']);
-            androidcontroller!.runJavaScript('''
+            _controller!.runJavaScript('''
               localStorage.setItem('Meteor.userId', '${messageData['result']['id']}');
               localStorage.setItem('Meteor.loginToken', '${messageData['result']['token']}');
             ''');
@@ -102,17 +122,19 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
         return NavigationDecision.navigate;
       })
       ..setOnProgress((int progress) {
-        _progress.value = progress;
+        if (mounted) {
+          _progress.value = progress;
+        }
       })
       ..setOnPageFinished(
         (url) async {
-          androidcontroller!.runJavaScript(WebViewJS.removeBannerJS);
+          _controller!.runJavaScript(WebViewJS.removeBannerJS);
           bool shouldShowBackButton =
               !_dontGoBack && UrlHandler.canGoBackBasedOnUrl(url);
           if (shouldShowBackButton) {
-            androidcontroller!.runJavaScript(WebViewJS.goBackJS);
+            _controller!.runJavaScript(WebViewJS.goBackJS);
           }
-          if (_dontGoBack) {
+          if (_dontGoBack && mounted) {
             setState(() {
               _dontGoBack = false;
             });
@@ -128,28 +150,26 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
             }
           }
           if (url == '${Env.appurl}/logout/?v=3') {
-            notificationid = -1;
             await storage.write(key: 'logout', value: 'true');
             await storage.delete(key: 'sessionid');
           }
           if (UrlHandler.isChatAuthUrl(url)) {
-            androidcontroller!.loadRequest(LoadRequestParams(
+            _controller!.loadRequest(LoadRequestParams(
                 uri: Uri.parse("${Env.appurl}/messages/?v=3")));
           }
           _previousurl = url;
         },
       )
       ..setOnWebResourceError((onWebResourceError) {
-        androidcontroller!.reload();
+        _controller!.reload();
       })
       ..setOnHttpError((HttpResponseError error) async {
         if (error.response!.statusCode == 403 &&
             error.request!.uri.toString() == '${Env.appurl}/logout/?v=3') {
-          notificationid = -1;
           await storage.write(key: 'logout', value: 'true');
           return;
         }
-        androidcontroller!.reload();
+        _controller!.reload();
       }));
 
     return true;
@@ -165,8 +185,14 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
       home: FutureBuilder(
           future: _androidControllerFuture(),
           builder: (context, snapshot) {
-            return androidWebView(context, _progress, snapshot, _previousurl,
-                (val) => setState(() => _dontGoBack = val), _dontGoBack);
+            return androidWebView(
+                context,
+                _progress,
+                snapshot,
+                _previousurl,
+                (val) => setState(() => _dontGoBack = val),
+                _dontGoBack,
+                _controller);
           }),
     );
   }
@@ -178,13 +204,18 @@ Widget androidWebView(
     AsyncSnapshot<bool> snapshot,
     String previousurl,
     Function(bool) setDontGoBack,
-    bool dontGoBackState) {
+    bool dontGoBackState,
+    AndroidWebViewController? controller) {
   return PopScope(
     onPopInvokedWithResult: (didPop, result) async {
       bool allowPop = false;
       if (!dontGoBackState) {
         if (UrlHandler.canGoBackBasedOnUrl(previousurl)) {
-          androidcontroller!.goBack();
+          if (controller != null) {
+            controller.goBack();
+          } else {
+            allowPop = true;
+          }
         } else {
           allowPop = true;
         }
@@ -213,9 +244,10 @@ Widget androidWebView(
                   );
                 }),
             Expanded(
-              child: snapshot.connectionState == ConnectionState.done
+              child: snapshot.connectionState == ConnectionState.done &&
+                      controller != null
                   ? AndroidWebViewWidget(AndroidWebViewWidgetCreationParams(
-                          controller: androidcontroller!))
+                          controller: controller))
                       .build(context)
                   : Center(
                       child: CircularProgressIndicator(
