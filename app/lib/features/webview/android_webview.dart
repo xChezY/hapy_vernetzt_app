@@ -4,7 +4,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hapy_vernetzt_app/core/env.dart';
 import 'package:hapy_vernetzt_app/main.dart'
-    show storage, selectnotificationstream, cookieManager;
+    show storage, selectnotificationstream;
+    import 'package:webview_cookie_manager/webview_cookie_manager.dart';
 import 'package:hapy_vernetzt_app/core/services/notification_service.dart';
 import 'package:hapy_vernetzt_app/features/notifications/notifications.dart'
     show isSessiondIDValid;
@@ -142,7 +143,7 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
           if (_previousurl == '${Env.appurl}/login/?v=3' &&
               url == '${Env.appurl}/dashboard/?v=3') {
             await storage.write(key: 'logout', value: 'false');
-            List<Cookie> cookies = await cookieManager.getCookies(url);
+            List<Cookie> cookies = await WebviewCookieManager().getCookies(url);
             for (Cookie cookie in cookies) {
               if (cookie.name == 'hameln-sessionid') {
                 await storage.write(key: 'sessionid', value: cookie.value);

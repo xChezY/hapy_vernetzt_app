@@ -1,22 +1,13 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hapy_vernetzt_app/features/webview/android_webview.dart';
 import 'package:hapy_vernetzt_app/core/env.dart';
-import 'package:hapy_vernetzt_app/core/firebase_options.dart';
-import 'package:hapy_vernetzt_app/features/notifications/notifications.dart';
 import 'package:hapy_vernetzt_app/features/webview/ios_webview.dart';
-import 'package:webview_cookie_manager/webview_cookie_manager.dart';
-import 'package:hapy_vernetzt_app/features/webview/url_handler.dart';
 import 'package:hapy_vernetzt_app/core/services/firebase_service.dart';
 import 'package:hapy_vernetzt_app/core/services/notification_service.dart';
-
-final cookieManager = WebviewCookieManager();
-
-final StreamController<String?> selectnotificationstream =
-    StreamController<String?>.broadcast();
+import 'package:webview_cookie_manager/webview_cookie_manager.dart';
 
 FlutterSecureStorage storage = const FlutterSecureStorage();
 
@@ -49,3 +40,6 @@ Future<void> main() async {
     runApp(const AndroidWebViewPage());
   }
 }
+
+final StreamController<String?> selectnotificationstream =
+    StreamController<String?>.broadcast();
