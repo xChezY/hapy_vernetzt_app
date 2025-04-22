@@ -1,45 +1,26 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hapy_vernetzt_app/features/webview/android_webview.dart';
 import 'package:hapy_vernetzt_app/core/env.dart';
-import 'package:hapy_vernetzt_app/core/firebase.dart';
 import 'package:hapy_vernetzt_app/core/firebase_options.dart';
 import 'package:hapy_vernetzt_app/features/notifications/notifications.dart';
 import 'package:hapy_vernetzt_app/features/webview/ios_webview.dart';
 import 'package:webview_cookie_manager/webview_cookie_manager.dart';
-import 'package:webview_flutter_android/webview_flutter_android.dart';
-import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import 'package:hapy_vernetzt_app/features/webview/url_handler.dart';
-
-final FlutterLocalNotificationsPlugin flutterlocalnotificationsplugin =
-    FlutterLocalNotificationsPlugin();
+import 'package:hapy_vernetzt_app/core/services/firebase_service.dart';
+import 'package:hapy_vernetzt_app/core/services/notification_service.dart';
 
 final cookieManager = WebviewCookieManager();
 
 final StreamController<String?> selectnotificationstream =
     StreamController<String?>.broadcast();
 
-WebKitWebViewController? ioscontroller;
-
-AndroidWebViewController? androidcontroller;
-
 FlutterSecureStorage storage = const FlutterSecureStorage();
 
 String starturl = '${Env.appurl}/signup/?v=3';
-
-int notificationid = 0;
-
-@pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  initNotifications();
-  showNotification();
-}
 
 void setLogout() async {
   String? logout = await storage.read(key: 'logout');
@@ -51,22 +32,16 @@ void setLogout() async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  final notificationPayload = await NotificationService().initialize();
+  if (notificationPayload != null && notificationPayload.isNotEmpty) {
+    starturl = "${Env.appurl}${notificationPayload}";
+  }
+
+  await FirebaseService().initialize();
+
   setLogout();
 
-  requestPermission();
-
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  initToken();
-  initOnTokenRefresh();
-
-  initNotifications();
-
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    showNotification();
-  });
-
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  await NotificationService().requestPermissions();
 
   if (Platform.isIOS) {
     runApp(const IOSWebViewPage());
