@@ -54,7 +54,7 @@ class NotificationService {
     if (notificationResponse.payload != null && payload!.isNotEmpty) {
       // Use internal method to trigger the callback
       _setDontGoBack(true);
-      final String targetUrl = "${Env.appurl}${payload}";
+      final String targetUrl = "${Env.appurl}$payload";
       debugPrint('Notification tapped, adding URL to stream: $targetUrl');
       // Use global stream (consider passing it in or using a different event mechanism later)
       selectnotificationstream.add(targetUrl);
