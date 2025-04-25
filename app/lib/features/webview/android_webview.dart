@@ -45,7 +45,6 @@ class _AndroidWebViewPageState extends State<AndroidWebViewPage> {
     // Listen to notification stream
     _notificationSubscription = selectnotificationstream.stream.listen((url) {
       if (url != null && url.isNotEmpty && _controller != null && mounted) {
-        debugPrint('Received URL from notification stream: $url');
         _controller!.loadRequest(LoadRequestParams(uri: Uri.parse(url)));
       }
     });
