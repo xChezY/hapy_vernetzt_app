@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:hapy_vernetzt_app/core/env.dart';
 
 class UrlHandler {
@@ -24,20 +23,16 @@ class UrlHandler {
   }
 
   static bool isWhitelistedUrl(String url) {
-    debugPrint('Checking URL whitelist: $url');
-
     // Explicitly prevent navigation TO specific URLs even if their domains are whitelisted.
     // This is necessary because these domains might be needed for loading resources (e.g., in iframes),
     // but direct navigation should be blocked.
 
     // Prevent direct navigation to the base chat URL (used for auth token retrieval).
     if (url == '${Env.chaturl}/') {
-      debugPrint('Preventing direct navigation to chat base URL: $url');
       return false;
     }
     // Prevent direct navigation to hCaptcha URLs.
     if (url.startsWith('https://www.hcaptcha.com/')) {
-      debugPrint('Preventing direct navigation to hCaptcha URL: $url');
       return false;
     }
 
@@ -52,11 +47,9 @@ class UrlHandler {
       final pattern =
           r'^https?:\/\/([a-zA-Z0-9-]+\.)?' + escapedDomain + r'(\/.*)?$';
       if (RegExp(pattern).hasMatch(url)) {
-        debugPrint('URL whitelisted: $url matched $domain');
         return true;
       }
     }
-    debugPrint('URL not whitelisted: $url');
     return false;
   }
 

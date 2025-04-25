@@ -54,7 +54,6 @@ class StorageService {
       try {
         return jsonDecode(alertsJson) as List<dynamic>;
       } catch (e) {
-        print('Error decoding read alerts: $e');
         // Optionally delete corrupted data
         // await deleteReadAlerts();
         return null;
