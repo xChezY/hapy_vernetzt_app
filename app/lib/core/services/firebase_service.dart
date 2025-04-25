@@ -1,6 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:hapy_vernetzt_app/core/firebase_options.dart';
+import 'package:hapy_vernetzt_app/firebase_options.dart';
 import 'package:hapy_vernetzt_app/core/services/notification_service.dart';
 import 'package:hapy_vernetzt_app/core/services/notification_backend_api_service.dart';
 import 'package:hapy_vernetzt_app/core/services/storage_service.dart';
