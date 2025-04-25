@@ -42,7 +42,7 @@ Future<List<HapyAlerts>> getHapyAlerts(String? sessionid) async {
 
   final items = json['data']?['items'];
   if (items is List) {
-    items.forEach((dynamic item) {
+    for (var item in items) {
       final itemId = item?['id'];
       final itemIsEmphasized = item?['is_emphasized'];
       final itemGroup = item?['group'];
@@ -65,7 +65,7 @@ Future<List<HapyAlerts>> getHapyAlerts(String? sessionid) async {
       if (itemId != null) {
         newlist.add(itemId);
       }
-    });
+    }
   }
 
   await storage.write(key: 'alerts', value: jsonEncode(newlist));

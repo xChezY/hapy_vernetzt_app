@@ -25,7 +25,7 @@ Future<void> main() async {
 
   final notificationPayload = await NotificationService().initialize();
   if (notificationPayload != null && notificationPayload.isNotEmpty) {
-    starturl = "${Env.appurl}${notificationPayload}";
+    starturl = "${Env.appurl}$notificationPayload";
   }
 
   await FirebaseService().initialize();
