@@ -2,8 +2,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:hapy_vernetzt_app/core/firebase_options.dart';
 import 'package:hapy_vernetzt_app/core/services/notification_service.dart';
-import 'package:hapy_vernetzt_app/main.dart' show storage;
 import 'package:hapy_vernetzt_app/core/services/notification_backend_api_service.dart';
+import 'package:hapy_vernetzt_app/core/services/storage_service.dart';
 
 // Top-level function for background message handling (required by Firebase)
 @pragma('vm:entry-point')
@@ -28,20 +28,18 @@ class FirebaseService {
   Future<void> _initToken() async {
     String token = await FirebaseMessaging.instance.getToken() ?? '';
     if (token.isNotEmpty) {
-      // Use NotificationBackendApiService directly
       await NotificationBackendApiService().sendDeviceToken(token);
-      // Use storage from main.dart
-      await storage.write(key: 'token', value: token);
+      // Use StorageService
+      await StorageService().setToken(token);
     }
   }
 
   // Moved from core/firebase.dart
   void _initOnTokenRefresh() {
     FirebaseMessaging.instance.onTokenRefresh.listen((token) async {
-      // Use NotificationBackendApiService directly
       await NotificationBackendApiService().sendDeviceToken(token);
-      // Use storage from main.dart
-      await storage.write(key: 'token', value: token);
+      // Use StorageService
+      await StorageService().setToken(token);
     });
   }
 
@@ -61,6 +59,5 @@ class FirebaseService {
 
     // Register background message handler
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
   }
 }
