@@ -3,9 +3,8 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:hapy_vernetzt_app/main.dart'
-    show storage, selectnotificationstream;
-    import 'package:webview_cookie_manager/webview_cookie_manager.dart';
+import 'package:hapy_vernetzt_app/main.dart' show selectnotificationstream;
+import 'package:webview_cookie_manager/webview_cookie_manager.dart';
 import 'package:hapy_vernetzt_app/core/env.dart';
 import 'package:hapy_vernetzt_app/features/notifications/notifications.dart'
     show isSessiondIDValid;
@@ -18,6 +17,7 @@ import 'dart:async';
 
 import '../../../main.dart';
 import 'package:hapy_vernetzt_app/core/services/notification_service.dart';
+import 'package:hapy_vernetzt_app/core/services/storage_service.dart';
 
 class IOSWebViewPage extends StatefulWidget {
   const IOSWebViewPage({super.key});
@@ -64,14 +64,14 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
   }
 
   Future<bool> _iOSControllerFuture() async {
-    String? sessionid = await storage.read(key: 'sessionid');
-    String starturl = '${Env.appurl}/signup/?v=3'; // Localize starturl
+    String? sessionid = await StorageService().getSessionId();
+    String starturl = '${Env.appurl}/signup/?v=3';
 
     if (sessionid != null) {
       if (await isSessiondIDValid()) {
         starturl = '${Env.appurl}/dashboard/?v=3';
       } else {
-        await storage.delete(key: 'sessionid');
+        await StorageService().deleteSessionId();
       }
     }
 
@@ -91,8 +91,9 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
           return NavigationDecision.prevent;
         }
         if (UrlHandler.isChatAuthUrl(request.url)) {
+          final currentSessionId = await StorageService().getSessionId();
           final authresponse = await http.get(Uri.parse(request.url), headers: {
-            'Cookie': 'hameln-sessionid=$sessionid',
+            'Cookie': 'hameln-sessionid=$currentSessionId',
           });
           RegExp tokenRegex = RegExp(r'"credentialToken":"(.*?)"');
           RegExp secretRegex = RegExp(r'"credentialSecret":"(.*?)"');
@@ -111,7 +112,7 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
               Uri.parse('${Env.chaturl}/api/v1/method.callAnon/login'),
               headers: {
                 'Content-Type': 'application/json',
-                'Cookie': 'hameln-sessionid=$sessionid',
+                'Cookie': 'hameln-sessionid=$currentSessionId',
               },
               body: loginbody,
             );
@@ -163,18 +164,17 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
           }
           if (_previousurl == '${Env.appurl}/login/?v=3' &&
               url == '${Env.appurl}/dashboard/?v=3') {
-            await storage.write(key: 'logout', value: 'false');
-            // Use global cookieManager again
+            await StorageService().setLogoutFlag(false);
             List<Cookie> cookies = await WebviewCookieManager().getCookies(url);
             for (Cookie cookie in cookies) {
               if (cookie.name == 'hameln-sessionid') {
-                await storage.write(key: 'sessionid', value: cookie.value);
+                await StorageService().setSessionId(cookie.value);
               }
             }
           }
           if (url == '${Env.appurl}/logout/?v=3') {
-            await storage.write(key: 'logout', value: 'true');
-            await storage.delete(key: 'sessionid');
+            await StorageService().setLogoutFlag(true);
+            await StorageService().deleteSessionId();
           }
           _previousurl = url;
         },
@@ -185,7 +185,7 @@ class _IOSWebViewPageState extends State<IOSWebViewPage> {
       ..setOnHttpError((HttpResponseError error) async {
         if (error.response!.statusCode == 403 &&
             error.request!.uri.toString() == '${Env.appurl}/logout/?v=3') {
-          await storage.write(key: 'logout', value: 'true');
+          await StorageService().setLogoutFlag(true);
           return;
         }
         _controller!.reload();

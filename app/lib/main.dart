@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:hapy_vernetzt_app/core/services/storage_service.dart';
 import 'package:hapy_vernetzt_app/features/webview/android_webview.dart';
 import 'package:hapy_vernetzt_app/core/env.dart';
 import 'package:hapy_vernetzt_app/features/webview/ios_webview.dart';
@@ -23,14 +24,14 @@ void setLogout() async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await StorageService().initializeLogoutFlag();
+
   final notificationPayload = await NotificationService().initialize();
   if (notificationPayload != null && notificationPayload.isNotEmpty) {
     starturl = "${Env.appurl}$notificationPayload";
   }
 
   await FirebaseService().initialize();
-
-  setLogout();
 
   await NotificationService().requestPermissions();
 
