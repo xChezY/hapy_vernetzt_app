@@ -55,6 +55,7 @@ dependencies:
   cupertino_icons: ^1.0.6
   http: ^1.2.2
   webview_flutter_platform_interface: ^2.10.0
+  flutter_inappwebview: ^6.1.5
 
 icons_launcher:
   image_path: "assets/images/logo.png"
