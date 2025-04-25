@@ -27,10 +27,6 @@ class UrlHandler {
     // This is necessary because these domains might be needed for loading resources (e.g., in iframes),
     // but direct navigation should be blocked.
 
-    // Prevent direct navigation to the base chat URL (used for auth token retrieval).
-    if (url == '${Env.chaturl}/') {
-      return false;
-    }
     // Prevent direct navigation to hCaptcha URLs.
     if (url.startsWith('https://www.hcaptcha.com/')) {
       return false;
