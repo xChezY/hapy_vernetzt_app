@@ -1,12 +1,15 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 // Import necessary classes/services
 import 'package:hapy_vernetzt_app/core/env.dart';
+import 'package:hapy_vernetzt_app/core/services/notification_service.dart';
 import 'package:hapy_vernetzt_app/features/notifications/notifications.dart';
 import 'package:hapy_vernetzt_app/features/webview/url_handler.dart';
 import 'package:hapy_vernetzt_app/core/services/storage_service.dart';
+import 'package:hapy_vernetzt_app/main.dart';
 import 'package:http/http.dart' as http;
 // Import WebViewJS and dart:io for Cookie
 import 'package:hapy_vernetzt_app/features/webview/webview_js.dart';
@@ -27,6 +30,8 @@ class _WebViewPageState extends State<WebViewPage> {
   String _previousUrl = '';
   bool _dontGoBack = false;
 
+  StreamSubscription<String?>? _notificationSubscription;
+
   final GlobalKey webViewKey = GlobalKey();
   PullToRefreshController? _pullToRefreshController;
   InAppWebViewController? _webViewController;
@@ -42,9 +47,6 @@ class _WebViewPageState extends State<WebViewPage> {
                 domStorageEnabled: true,
                 supportZoom: false,
                 enableViewportScale: false);
-  
-
-
 
   @override
   void initState() {
@@ -77,6 +79,29 @@ class _WebViewPageState extends State<WebViewPage> {
               }
             },
           );
+    
+    NotificationService().registerSetDontGoBackCallback((value) {
+      if (mounted) {
+        setState(() {
+          _dontGoBack = value;
+        });
+      }
+    });
+    // Listen to notification stream
+    _notificationSubscription = selectnotificationstream.stream.listen((url) {
+      if (url != null && url.isNotEmpty && _webViewController != null && mounted) {
+        _webViewController!.loadUrl(urlRequest: URLRequest(url: WebUri(url)));
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    // Unregister callback from NotificationService instance
+    NotificationService().unregisterSetDontGoBackCallback();
+    // Cancel stream subscription
+    _notificationSubscription?.cancel();
+    super.dispose();
   }
 
   @override
