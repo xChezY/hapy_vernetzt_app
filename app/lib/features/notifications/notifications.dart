@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:hapy_vernetzt_app/core/env.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hapy_vernetzt_app/core/services/hapy_api_service.dart';
