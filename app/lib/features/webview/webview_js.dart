@@ -16,4 +16,12 @@ class WebViewJS {
       document.querySelector('footer').remove();
     }
   ''';
+
+  static addSessionToLocalStorage(String id, String token) {
+    return '''
+      localStorage.setItem('Meteor.userId', '$id');
+      localStorage.setItem('Meteor.loginToken', '$token');
+    ''';
+  }
+
 }
