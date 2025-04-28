@@ -77,7 +77,7 @@ Future<void> onDidReceiveNotificationResponse(
     NotificationResponse notificationResponse) async {
   final String? payload = notificationResponse.payload;
   if (notificationResponse.payload != null && payload!.isNotEmpty) {
-    final String targetUrl = "${Env.appurl}${payload}";
+    final String targetUrl = "${Env.appurl}$payload";
     debugPrint(
         'Notification tapped (from notifications.dart), adding URL to stream: $targetUrl');
     selectnotificationstream.add(targetUrl);
