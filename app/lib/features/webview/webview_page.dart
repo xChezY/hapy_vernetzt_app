@@ -26,7 +26,7 @@ class WebViewPage extends StatefulWidget {
 class _WebViewPageState extends State<WebViewPage> {
   
   double _progress = 0;
-  String _startUrl = '${Env.appurl}/signup/?v=3';
+  late String _startUrl;
   String _previousUrl = '';
   bool _dontGoBack = false;
 
@@ -51,11 +51,13 @@ class _WebViewPageState extends State<WebViewPage> {
   @override
   void initState() {
     super.initState();
+    _startUrl = widget.initialUrl.isNotEmpty ? widget.initialUrl : '${Env.appurl}/signup/?v=3';
+
     // Check if user has session
     StorageService().getSessionId().then((sessionid) =>
       isSessiondIDValid().then((valid) {
         setState(() {
-          if(sessionid == null || valid){
+          if((sessionid == null || valid) && _startUrl != widget.initialUrl){
           _startUrl = '${Env.appurl}/dashboard/?v=3';
         }
         });
