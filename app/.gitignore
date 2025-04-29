@@ -1,6 +1,9 @@
 **/firebase_options.dart
 **/env.g.dart
 .env
+.DS_Store
+.AppleDouble
+.LSOverride
 
 # Miscellaneous
 *.class
