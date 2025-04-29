@@ -1,7 +1,7 @@
 **/firebase_options.dart
 **/env.g.dart
 .env
-.DS_Store
+**/.DS_Store
 .AppleDouble
 .LSOverride
 
@@ -10,7 +10,6 @@
 *.log
 *.pyc
 *.swp
-.DS_Store
 .atom/
 .build/
 .buildlog/
