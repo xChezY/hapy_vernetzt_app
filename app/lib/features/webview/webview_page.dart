@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -30,6 +31,9 @@ class _WebViewPageState extends State<WebViewPage> {
   String _previousUrl = '';
   bool _dontGoBack = false;
 
+  // Init ChromeSafariBrowser
+  final ChromeSafariBrowser browser = ChromeSafariBrowser();
+
   StreamSubscription<String?>? _notificationSubscription;
 
   final GlobalKey webViewKey = GlobalKey();
@@ -46,6 +50,8 @@ class _WebViewPageState extends State<WebViewPage> {
                 javaScriptEnabled: true,
                 domStorageEnabled: true,
                 supportZoom: false,
+                isInspectable: true,
+                useOnDownloadStart: true,
                 enableViewportScale: false);
 
   @override
@@ -133,6 +139,10 @@ class _WebViewPageState extends State<WebViewPage> {
                 initialSettings: _settings,
                 initialUrlRequest: URLRequest(url: WebUri(_startUrl)),
                 pullToRefreshController: _pullToRefreshController,
+                initialUserScripts: UnmodifiableListView<UserScript>([
+                  WebViewJS.userScriptremoveBannerJS,
+                  WebViewJS.autoClickChatButtonJS,
+                ]),
                 onPermissionRequest:(controller, permissionRequest) async {
                   return PermissionResponse(
                     resources: permissionRequest.resources,
@@ -142,6 +152,11 @@ class _WebViewPageState extends State<WebViewPage> {
                 shouldOverrideUrlLoading:(controller, navigationAction) async {
                   String url = navigationAction.request.url!.toString();
                   if (!UrlHandler.isWhitelistedUrl(url)) {
+                    if(url.contains("http")){
+                      browser.open(
+                      url: WebUri(url),
+                        );
+                    }
                     return NavigationActionPolicy.CANCEL;
                   }
                   if (UrlHandler.isChatAuthUrl(url)) {
@@ -178,7 +193,7 @@ class _WebViewPageState extends State<WebViewPage> {
                           messageData['result']['userId'],
                           messageData['result']['token'],
                         ),
-                        injectionTime: UserScriptInjectionTime.AT_DOCUMENT_END,
+                        injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
                         forMainFrameOnly: false,
                         ));
                       }
@@ -187,9 +202,9 @@ class _WebViewPageState extends State<WebViewPage> {
                   return NavigationActionPolicy.ALLOW;
                 },
                 onUpdateVisitedHistory: (controller, url, isReload) async {
-                  controller.evaluateJavascript(source: WebViewJS.removeBannerJS);
                   bool shouldShowBackButton = !_dontGoBack && UrlHandler.canGoBackBasedOnUrl(url.toString());
                   if (shouldShowBackButton) {
+                    print("WebViewPage: Going back to previous page");
                     controller.evaluateJavascript(source: WebViewJS.goBackJS);
                   }
                   if (_dontGoBack && mounted) {
@@ -225,6 +240,9 @@ class _WebViewPageState extends State<WebViewPage> {
                     return;
                   }
                   controller.reload();
+                },
+                onLoadStop: (controller, url) {
+                  
                 },
                 onWebViewCreated: (controller) => _webViewController = controller,
                 onProgressChanged: (controller, progress) {

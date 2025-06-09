@@ -5,7 +5,7 @@ class UrlHandler {
     Env.appurl,
     Env.cloudurl,
     Env.chaturl,
-    "https://hcaptcha.com", // Added based on original main.dart logic
+    "https://newassets.hcaptcha.com",
   ];
 
   // Checks if navigation back should be allowed based *only* on the URL pattern.
@@ -23,15 +23,6 @@ class UrlHandler {
   }
 
   static bool isWhitelistedUrl(String url) {
-    // Explicitly prevent navigation TO specific URLs even if their domains are whitelisted.
-    // This is necessary because these domains might be needed for loading resources (e.g., in iframes),
-    // but direct navigation should be blocked.
-
-    // Prevent direct navigation to hCaptcha URLs.
-    if (url.startsWith('https://www.hcaptcha.com/')) {
-      return false;
-    }
-
     // Check if the URL belongs to any whitelisted domain (allows resource loading).
     for (final String domain in whitelist) {
       // Normalize domain by removing scheme for regex
