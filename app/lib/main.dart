@@ -6,6 +6,7 @@ import 'package:hapy_vernetzt_app/core/env.dart';
 import 'package:hapy_vernetzt_app/core/services/firebase_service.dart';
 import 'package:hapy_vernetzt_app/core/services/notification_service.dart';
 import 'package:hapy_vernetzt_app/features/webview/webview_page.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
 
 FlutterSecureStorage storage = const FlutterSecureStorage();
 
@@ -27,9 +28,14 @@ Future<void> main() async {
     initialUrl = "${Env.appurl}$notificationPayload";
   }
 
-  await FirebaseService().initialize();
+  await FirebaseService().initialize(); // What happens if there is no internet connection?
 
   await NotificationService().requestPermissions();
+
+  await FlutterDownloader.initialize(
+      debug: true,
+      // optional: set to false to disable printing logs to console (default: true)
+      );
 
   runApp(WebViewPage(initialUrl: initialUrl));
 }

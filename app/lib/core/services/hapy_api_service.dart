@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:hapy_vernetzt_app/core/env.dart';
 
@@ -33,7 +34,7 @@ class HaPyApiService {
       final Map<String, dynamic> json = jsonDecode(response.body);
       return json['data']['authenticated'] ?? false;
     } catch (e) {
-      print('Error checking session validity: $e');
+      debugPrint('Error checking session validity: $e');
       return false;
     }
   }
@@ -57,7 +58,7 @@ class HaPyApiService {
       final Map<String, dynamic> json = jsonDecode(response.body);
       return json;
     } catch (e) {
-      print('Error fetching navigation alerts: $e');
+      debugPrint('Error fetching navigation alerts: $e');
       return null;
     }
   }

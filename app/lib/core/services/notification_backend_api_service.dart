@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:hapy_vernetzt_app/core/env.dart';
 
@@ -35,7 +36,7 @@ class NotificationBackendApiService {
 
       return response.statusCode == 200;
     } catch (e) {
-      print('Error sending device token: $e');
+      debugPrint('Error sending device token: $e');
       return false;
     }
   }

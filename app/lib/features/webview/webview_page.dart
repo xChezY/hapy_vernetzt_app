@@ -1,9 +1,14 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:io';
+import 'dart:isolate';
+import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'webview_downloader.dart';
 // Import necessary classes/services
 import 'package:hapy_vernetzt_app/core/env.dart';
 import 'package:hapy_vernetzt_app/core/services/notification_service.dart';
@@ -30,6 +35,8 @@ class _WebViewPageState extends State<WebViewPage> {
   late String _startUrl;
   String _previousUrl = '';
   bool _dontGoBack = false;
+
+  final ReceivePort _port = ReceivePort();
 
   // Init ChromeSafariBrowser
   final ChromeSafariBrowser browser = ChromeSafariBrowser();
@@ -68,6 +75,21 @@ class _WebViewPageState extends State<WebViewPage> {
         }
         });
       }));
+
+    // Init Flutter Downloader
+    IsolateNameServer.registerPortWithName(_port.sendPort, 'downloader_send_port');
+    _port.listen((dynamic data) async {
+      if (data[1] == 3) {
+        await FlutterDownloader.loadTasks();
+        if(Platform.isIOS) {
+          //TODO on iOS I only download a file once
+          FlutterDownloader.open(taskId: data[0]);
+        }
+      }
+    });
+
+    FlutterDownloader.registerCallback(downloadCallback);
+    
     // Init pullToRefresh
      _pullToRefreshController = kIsWeb ||
             ![TargetPlatform.iOS, TargetPlatform.android]
@@ -149,6 +171,11 @@ class _WebViewPageState extends State<WebViewPage> {
                     action: PermissionResponseAction.GRANT
                   );
                 },
+                onDownloadStarting: (controller, downloadStartRequest) async {
+                  await downloadFile(downloadStartRequest.url.toString(),
+                    downloadStartRequest.suggestedFilename);
+                  return null;
+                },
                 shouldOverrideUrlLoading:(controller, navigationAction) async {
                   String url = navigationAction.request.url!.toString();
                   if (!UrlHandler.isWhitelistedUrl(url)) {
@@ -204,7 +231,6 @@ class _WebViewPageState extends State<WebViewPage> {
                 onUpdateVisitedHistory: (controller, url, isReload) async {
                   bool shouldShowBackButton = !_dontGoBack && UrlHandler.canGoBackBasedOnUrl(url.toString());
                   if (shouldShowBackButton) {
-                    print("WebViewPage: Going back to previous page");
                     controller.evaluateJavascript(source: WebViewJS.goBackJS);
                   }
                   if (_dontGoBack && mounted) {
