@@ -69,7 +69,7 @@ class WebViewJS {
                       forMainFrameOnly: false,
                       );
 
-  static addSessionToLocalStorage(dynamic id, dynamic token) {
+  static String addSessionToLocalStorage(dynamic id, dynamic token) {
     return '''
       localStorage.setItem('Meteor.userId', '$id');
       localStorage.setItem('Meteor.loginToken', '$token');
