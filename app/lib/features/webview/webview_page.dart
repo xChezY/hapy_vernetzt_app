@@ -44,6 +44,7 @@ class _WebViewPageState extends State<WebViewPage> {
   StreamSubscription<String?>? _notificationSubscription;
 
   final GlobalKey webViewKey = GlobalKey();
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   PullToRefreshController? _pullToRefreshController;
   InAppWebViewController? _webViewController;
   final InAppWebViewSettings _settings = InAppWebViewSettings(
@@ -66,7 +67,7 @@ class _WebViewPageState extends State<WebViewPage> {
     if (didPop) return;
     if (_webViewController == null) {
       if (Platform.isAndroid) {
-        SystemNavigator.pop();
+        _confirmExitDialog();
       }
       return;
     }
@@ -75,10 +76,40 @@ class _WebViewPageState extends State<WebViewPage> {
         await _webViewController!.goBack();
       } else {
         if (Platform.isAndroid) {
-          SystemNavigator.pop();
+          _confirmExitDialog();
         }
       }
     });
+  }
+
+  Future<void> _confirmExitDialog() async {
+    final BuildContext? dialogContext = _navigatorKey.currentContext;
+    if (dialogContext == null) return;
+    final bool shouldExit = await showDialog<bool>(
+          context: dialogContext,
+          barrierDismissible: false,
+          builder: (ctx) {
+            return AlertDialog(
+              title: const Text('App schließen?'),
+              content: const Text('Möchtest du die App wirklich schließen?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: const Text('Abbrechen'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  child: const Text('Schließen'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+
+    if (shouldExit) {
+      SystemNavigator.pop();
+    }
   }
 
   @override
@@ -165,6 +196,7 @@ class _WebViewPageState extends State<WebViewPage> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+        navigatorKey: _navigatorKey,
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           primaryColor: Env.primaryColorObj,
