@@ -180,28 +180,11 @@ class _WebViewPageState extends State<WebViewPage> {
                         action: PermissionResponseAction.GRANT);
                   },
                   onDownloadStarting: (controller, downloadStartRequest) async {
-                    String url = downloadStartRequest.url.toString();
-                    String? filename = downloadStartRequest.suggestedFilename;
-                    String? mimeType = downloadStartRequest.mimeType;
-
-                    if (filename == null ||
-                        filename.isEmpty ||
-                        filename.endsWith('.php')) {
-                      if (mimeType == 'application/zip') {
-                        filename =
-                            'download_${DateTime.now().millisecondsSinceEpoch}.zip';
-                      } else {
-                        final urlName = url.split('/').last.split('?').first;
-                        if (urlName.isNotEmpty && !urlName.endsWith('.php')) {
-                          filename = urlName;
-                        } else {
-                          filename =
-                              'download_${DateTime.now().millisecondsSinceEpoch}';
-                        }
-                      }
-                    }
-
-                    await downloadFile(url, filename);
+                    await downloadFile(
+                      downloadStartRequest.url.toString(),
+                      downloadStartRequest.suggestedFilename,
+                      downloadStartRequest.mimeType,
+                    );
                   },
                   shouldOverrideUrlLoading:
                       (controller, navigationAction) async {

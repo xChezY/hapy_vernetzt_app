@@ -7,12 +7,27 @@ import 'package:hapy_vernetzt_app/core/env.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 
-Future<void> downloadFile(String url, [String? filename]) async {
+Future<void> downloadFile(String url,
+    [String? suggestedFilename, String? mimeType]) async {
   List<Cookie> cookies =
       await CookieManager().getCookies(url: WebUri(Env.cloudurl));
   Map<String, String> headercookie = {
     "Cookie": cookies.map((c) => '${c.name}=${c.value}').join('; ')
   };
+
+  String? filename = suggestedFilename;
+  if (filename == null || filename.isEmpty || filename.endsWith('.php')) {
+    if (mimeType == 'application/zip') {
+      filename = 'download_${DateTime.now().millisecondsSinceEpoch}.zip';
+    } else {
+      final urlName = url.split('/').last.split('?').first;
+      if (urlName.isNotEmpty && !urlName.endsWith('.php')) {
+        filename = urlName;
+      } else {
+        filename = 'download_${DateTime.now().millisecondsSinceEpoch}';
+      }
+    }
+  }
 
   final downloadsDir = await getDownloadsDirectory();
   if (downloadsDir != null) {
