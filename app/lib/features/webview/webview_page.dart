@@ -6,6 +6,7 @@ import 'dart:isolate';
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'webview_downloader.dart';
@@ -60,6 +61,25 @@ class _WebViewPageState extends State<WebViewPage> {
       isInspectable: true,
       useOnDownloadStart: true,
       enableViewportScale: false);
+
+  void _handlePopInvoked(bool didPop) {
+    if (didPop) return;
+    if (_webViewController == null) {
+      if (Platform.isAndroid) {
+        SystemNavigator.pop();
+      }
+      return;
+    }
+    _webViewController!.canGoBack().then((canGoBack) async {
+      if (canGoBack) {
+        await _webViewController!.goBack();
+      } else {
+        if (Platform.isAndroid) {
+          SystemNavigator.pop();
+        }
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -149,162 +169,172 @@ class _WebViewPageState extends State<WebViewPage> {
         theme: ThemeData(
           primaryColor: Env.primaryColorObj,
         ),
-        home: Scaffold(
-          backgroundColor: Colors.white,
-          body: SafeArea(
-            bottom: false,
-            child: Column(
-              children: [
-                if (_progress == 1)
-                  const SizedBox(height: 4)
-                else
-                  LinearProgressIndicator(
-                    value: _progress,
-                    backgroundColor: Colors.grey[200],
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(Env.primaryColorObj),
-                  ),
-                Expanded(
-                    child: InAppWebView(
-                  key: webViewKey,
-                  initialSettings: _settings,
-                  initialUrlRequest: URLRequest(url: WebUri(_startUrl)),
-                  pullToRefreshController: _pullToRefreshController,
-                  initialUserScripts: UnmodifiableListView<UserScript>([
-                    WebViewJS.userScriptremoveBannerJS,
-                    WebViewJS.autoClickChatButtonJS,
-                  ]),
-                  onPermissionRequest: (controller, permissionRequest) async {
-                    return PermissionResponse(
-                        resources: permissionRequest.resources,
-                        action: PermissionResponseAction.GRANT);
-                  },
-                  onDownloadStarting: (controller, downloadStartRequest) async {
-                    await downloadFile(
-                      downloadStartRequest.url.toString(),
-                      downloadStartRequest.suggestedFilename,
-                      downloadStartRequest.mimeType,
-                    );
-                  },
-                  shouldOverrideUrlLoading:
-                      (controller, navigationAction) async {
-                    String url = navigationAction.request.url!.toString();
-                    if (!UrlHandler.isWhitelistedUrl(url)) {
-                      if (url.contains("http")) {
-                        browser.open(
-                          url: WebUri(url),
-                        );
+        home: PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) => _handlePopInvoked(didPop),
+          child: Scaffold(
+            backgroundColor: Colors.white,
+            body: SafeArea(
+              bottom: false,
+              child: Column(
+                children: [
+                  if (_progress == 1)
+                    const SizedBox(height: 4)
+                  else
+                    LinearProgressIndicator(
+                      value: _progress,
+                      backgroundColor: Colors.grey[200],
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Env.primaryColorObj),
+                    ),
+                  Expanded(
+                      child: InAppWebView(
+                    key: webViewKey,
+                    initialSettings: _settings,
+                    initialUrlRequest: URLRequest(url: WebUri(_startUrl)),
+                    pullToRefreshController: _pullToRefreshController,
+                    initialUserScripts: UnmodifiableListView<UserScript>([
+                      WebViewJS.userScriptremoveBannerJS,
+                      WebViewJS.autoClickChatButtonJS,
+                    ]),
+                    onPermissionRequest: (controller, permissionRequest) async {
+                      return PermissionResponse(
+                          resources: permissionRequest.resources,
+                          action: PermissionResponseAction.GRANT);
+                    },
+                    onDownloadStarting:
+                        (controller, downloadStartRequest) async {
+                      await downloadFile(
+                        downloadStartRequest.url.toString(),
+                        downloadStartRequest.suggestedFilename,
+                        downloadStartRequest.mimeType,
+                      );
+                      return null;
+                    },
+                    shouldOverrideUrlLoading:
+                        (controller, navigationAction) async {
+                      String url = navigationAction.request.url!.toString();
+                      if (!UrlHandler.isWhitelistedUrl(url)) {
+                        if (url.contains("http")) {
+                          browser.open(
+                            url: WebUri(url),
+                          );
+                        }
+                        return NavigationActionPolicy.CANCEL;
                       }
-                      return NavigationActionPolicy.CANCEL;
-                    }
-                    if (UrlHandler.isChatAuthUrl(url)) {
-                      final currentSessionId =
-                          await StorageService().getSessionId();
-                      final authresponse =
-                          await http.get(Uri.parse(url), headers: {
-                        'Cookie': 'hameln-sessionid=$currentSessionId',
-                      });
-                      RegExp tokenRegex = RegExp(r'"credentialToken":"(.*?)"');
-                      RegExp secretRegex =
-                          RegExp(r'"credentialSecret":"(.*?)"');
-                      var tokenMatch = tokenRegex.firstMatch(authresponse.body);
-                      var secretMatch =
-                          secretRegex.firstMatch(authresponse.body);
+                      if (UrlHandler.isChatAuthUrl(url)) {
+                        final currentSessionId =
+                            await StorageService().getSessionId();
+                        final authresponse =
+                            await http.get(Uri.parse(url), headers: {
+                          'Cookie': 'hameln-sessionid=$currentSessionId',
+                        });
+                        RegExp tokenRegex =
+                            RegExp(r'"credentialToken":"(.*?)"');
+                        RegExp secretRegex =
+                            RegExp(r'"credentialSecret":"(.*?)"');
+                        var tokenMatch =
+                            tokenRegex.firstMatch(authresponse.body);
+                        var secretMatch =
+                            secretRegex.firstMatch(authresponse.body);
 
-                      if (tokenMatch != null && secretMatch != null) {
-                        var credentialToken = tokenMatch.group(1);
-                        var credentialSecret = secretMatch.group(1);
+                        if (tokenMatch != null && secretMatch != null) {
+                          var credentialToken = tokenMatch.group(1);
+                          var credentialSecret = secretMatch.group(1);
 
-                        final String loginbody = '''
+                          final String loginbody = '''
                           {"message":"{\\"msg\\":\\"method\\",\\"id\\":\\"5\\",\\"method\\":\\"login\\",\\"params\\":[{\\"oauth\\":{\\"credentialToken\\":\\"$credentialToken\\",\\"credentialSecret\\":\\"$credentialSecret\\"}}]}"}
                         ''';
 
-                        final oauthresponse = await http.post(
-                          Uri.parse(
-                              '${Env.chaturl}/api/v1/method.callAnon/login'),
-                          headers: {
-                            'Content-Type': 'application/json',
-                            'Cookie': 'hameln-sessionid=$currentSessionId',
-                          },
-                          body: loginbody,
-                        );
-                        var jsonData = jsonDecode(oauthresponse.body);
-                        var messageData = jsonDecode(jsonData['message']);
+                          final oauthresponse = await http.post(
+                            Uri.parse(
+                                '${Env.chaturl}/api/v1/method.callAnon/login'),
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'Cookie': 'hameln-sessionid=$currentSessionId',
+                            },
+                            body: loginbody,
+                          );
+                          var jsonData = jsonDecode(oauthresponse.body);
+                          var messageData = jsonDecode(jsonData['message']);
 
-                        controller.addUserScript(
-                            userScript: UserScript(
-                          source: WebViewJS.addSessionToLocalStorage(
-                            messageData['result']['userId'],
-                            messageData['result']['token'],
-                          ),
-                          injectionTime:
-                              UserScriptInjectionTime.AT_DOCUMENT_START,
-                          forMainFrameOnly: false,
-                        ));
+                          controller.addUserScript(
+                              userScript: UserScript(
+                            source: WebViewJS.addSessionToLocalStorage(
+                              messageData['result']['userId'],
+                              messageData['result']['token'],
+                            ),
+                            injectionTime:
+                                UserScriptInjectionTime.AT_DOCUMENT_START,
+                            forMainFrameOnly: false,
+                          ));
+                        }
+                        controller.loadUrl(
+                            urlRequest: URLRequest(
+                                url: WebUri("${Env.appurl}/messages/?v=3")));
                       }
-                      controller.loadUrl(
-                          urlRequest: URLRequest(
-                              url: WebUri("${Env.appurl}/messages/?v=3")));
-                    }
-                    return NavigationActionPolicy.ALLOW;
-                  },
-                  onUpdateVisitedHistory: (controller, url, isReload) async {
-                    bool shouldShowBackButton = !_dontGoBack &&
-                        UrlHandler.canGoBackBasedOnUrl(url.toString());
-                    if (shouldShowBackButton) {
-                      controller.evaluateJavascript(source: WebViewJS.goBackJS);
-                    }
-                    if (_dontGoBack && mounted) {
-                      setState(() {
-                        _dontGoBack = false;
-                      });
-                    }
-                    if (_previousUrl == '${Env.appurl}/login/?v=3' &&
-                        url.toString() == '${Env.appurl}/dashboard/') {
-                      await StorageService().setLogoutFlag(false);
-                      if (url != null) {
-                        List<Cookie> cookies =
-                            await CookieManager().getCookies(url: url);
-                        for (Cookie cookie in cookies) {
-                          if (cookie.name == 'hameln-sessionid') {
-                            await StorageService().setSessionId(cookie.value);
+                      return NavigationActionPolicy.ALLOW;
+                    },
+                    onUpdateVisitedHistory: (controller, url, isReload) async {
+                      bool shouldShowBackButton = !_dontGoBack &&
+                          UrlHandler.canGoBackBasedOnUrl(url.toString());
+                      if (shouldShowBackButton) {
+                        controller.evaluateJavascript(
+                            source: WebViewJS.goBackJS);
+                      }
+                      if (_dontGoBack && mounted) {
+                        setState(() {
+                          _dontGoBack = false;
+                        });
+                      }
+                      if (_previousUrl == '${Env.appurl}/login/?v=3' &&
+                          url.toString() == '${Env.appurl}/dashboard/') {
+                        await StorageService().setLogoutFlag(false);
+                        if (url != null) {
+                          List<Cookie> cookies =
+                              await CookieManager().getCookies(url: url);
+                          for (Cookie cookie in cookies) {
+                            if (cookie.name == 'hameln-sessionid') {
+                              await StorageService().setSessionId(cookie.value);
+                            }
                           }
                         }
                       }
-                    }
-                    if (url.toString() == '${Env.appurl}/logout/?v=3') {
-                      await StorageService().setLogoutFlag(true);
-                      await StorageService().deleteSessionId();
-                    }
-                    if (UrlHandler.isChatAuthUrl(url.toString())) {
-                      controller.loadUrl(
-                          urlRequest: URLRequest(
-                              url: WebUri("${Env.appurl}/messages/?v=3")));
-                    }
-                    _previousUrl = url.toString();
-                  },
-                  onReceivedHttpError:
-                      (controller, request, errorResponse) async {
-                    if (errorResponse.statusCode == 403 &&
-                        request.url.toString() == '${Env.appurl}/logout/?v=3') {
-                      await StorageService().setLogoutFlag(true);
-                      return;
-                    }
-                    controller.reload();
-                  },
-                  onLoadStop: (controller, url) {},
-                  onWebViewCreated: (controller) =>
-                      _webViewController = controller,
-                  onProgressChanged: (controller, progress) {
-                    if (progress == 100) {
-                      _pullToRefreshController?.endRefreshing();
-                    }
-                    setState(() {
-                      _progress = progress / 100;
-                    });
-                  },
-                )),
-              ],
+                      if (url.toString() == '${Env.appurl}/logout/?v=3') {
+                        await StorageService().setLogoutFlag(true);
+                        await StorageService().deleteSessionId();
+                      }
+                      if (UrlHandler.isChatAuthUrl(url.toString())) {
+                        controller.loadUrl(
+                            urlRequest: URLRequest(
+                                url: WebUri("${Env.appurl}/messages/?v=3")));
+                      }
+                      _previousUrl = url.toString();
+                    },
+                    onReceivedHttpError:
+                        (controller, request, errorResponse) async {
+                      if (errorResponse.statusCode == 403 &&
+                          request.url.toString() ==
+                              '${Env.appurl}/logout/?v=3') {
+                        await StorageService().setLogoutFlag(true);
+                        return;
+                      }
+                      controller.reload();
+                    },
+                    onLoadStop: (controller, url) {},
+                    onWebViewCreated: (controller) =>
+                        _webViewController = controller,
+                    onProgressChanged: (controller, progress) {
+                      if (progress == 100) {
+                        _pullToRefreshController?.endRefreshing();
+                      }
+                      setState(() {
+                        _progress = progress / 100;
+                      });
+                    },
+                  )),
+                ],
+              ),
             ),
           ),
         ));

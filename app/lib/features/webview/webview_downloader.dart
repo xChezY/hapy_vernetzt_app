@@ -5,7 +5,6 @@ import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:hapy_vernetzt_app/core/env.dart';
 import 'package:path_provider/path_provider.dart';
-import 'dart:io';
 
 Future<void> downloadFile(String url,
     [String? suggestedFilename, String? mimeType]) async {
