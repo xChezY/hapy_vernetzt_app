@@ -5,6 +5,14 @@
 .AppleDouble
 .LSOverride
 
+# Sensitive mobile platform configs and keystores
+**/google-services.json
+**/GoogleService-Info.plist
+**/key.properties
+**/*.jks
+**/*.keystore
+**/*.p12
+
 # Miscellaneous
 *.class
 *.log

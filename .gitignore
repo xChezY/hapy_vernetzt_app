@@ -3,3 +3,12 @@
 .DS_Store
 .AppleDouble
 .LSOverride
+
+# Sensitive flutter/firebase/keystore artifacts (defense in depth)
+app/**/firebase_options.dart
+app/**/google-services.json
+app/**/GoogleService-Info.plist
+app/**/key.properties
+app/**/**/*.jks
+app/**/**/*.keystore
+app/**/**/*.p12
