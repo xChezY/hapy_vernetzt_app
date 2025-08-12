@@ -15,16 +15,18 @@ Future<void> downloadFile(String url,
     "Cookie": cookies.map((c) => '${c.name}=${c.value}').join('; ')
   };
 
+  String fallbackFilename =
+      '${Env.sanitizedAppName}-download_${DateTime.now().millisecondsSinceEpoch}';
   String? filename = suggestedFilename;
   if (filename == null || filename.isEmpty || filename.endsWith('.php')) {
     if (mimeType == 'application/zip') {
-      filename = 'download_${DateTime.now().millisecondsSinceEpoch}.zip';
+      filename = '$fallbackFilename.zip';
     } else {
       final urlName = url.split('/').last.split('?').first;
       if (urlName.isNotEmpty && !urlName.endsWith('.php')) {
         filename = urlName;
       } else {
-        filename = 'download_${DateTime.now().millisecondsSinceEpoch}';
+        filename = fallbackFilename;
       }
     }
   }

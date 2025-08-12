@@ -8,6 +8,17 @@ final class Env {
   @EnviedField(varName: 'URL', obfuscate: true)
   static String appurl = _Env.appurl;
 
+  @EnviedField(varName: 'APP_NAME', obfuscate: false)
+  static const String appName = _Env.appName;
+
+  /// Provides a sanitized version of the app name suitable for filenames.
+  static String get sanitizedAppName {
+    return appName
+        .toLowerCase()
+        .replaceAll(RegExp(r'\s+'), '-') // Replace spaces with hyphens
+        .replaceAll(RegExp(r'[^a-z0-9_-]'), ''); // Remove invalid characters
+  }
+
   @EnviedField(varName: 'API_TOKEN', obfuscate: true)
   static String apitoken = _Env.apitoken;
 
