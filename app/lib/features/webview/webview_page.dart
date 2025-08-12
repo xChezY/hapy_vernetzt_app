@@ -20,6 +20,7 @@ import 'package:hapy_vernetzt_app/main.dart';
 import 'package:http/http.dart' as http;
 // Import WebViewJS and dart:io for Cookie
 import 'package:hapy_vernetzt_app/features/webview/webview_js.dart';
+import 'package:path/path.dart' as p;
 
 class WebViewPage extends StatefulWidget {
   // Add constructor to accept initialUrl
@@ -236,11 +237,31 @@ class _WebViewPageState extends State<WebViewPage> {
                     },
                     onDownloadStarting:
                         (controller, downloadStartRequest) async {
-                      await downloadFile(
+                      final result = await downloadFile(
                         downloadStartRequest.url.toString(),
                         downloadStartRequest.suggestedFilename,
                         downloadStartRequest.mimeType,
                       );
+                      final snackCtx = _navigatorKey.currentContext;
+                      if (result != null && mounted && snackCtx != null) {
+                        final folderName = p.basename(result.savedDir);
+                        final isImmediateSave =
+                            Platform.isIOS || result.taskId == null;
+                        final String message = isImmediateSave
+                            ? 'Datei gespeichert\nName: ${result.filename}\nAblage: Dateien‑App > $folderName'
+                            : 'Download gestartet\nDatei: ${result.filename}\nOrdner: $folderName';
+                        ScaffoldMessenger.of(snackCtx).showSnackBar(
+                          SnackBar(
+                              content: Text(message),
+                              duration: const Duration(seconds: 4)),
+                        );
+                      } else if (mounted && snackCtx != null) {
+                        ScaffoldMessenger.of(snackCtx).showSnackBar(
+                          const SnackBar(
+                              content: Text(
+                                  'Download konnte nicht gestartet werden')),
+                        );
+                      }
                       return null;
                     },
                     shouldOverrideUrlLoading:

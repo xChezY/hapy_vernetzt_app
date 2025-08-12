@@ -45,6 +45,7 @@ dependencies:
   flutter_inappwebview: ^6.2.0-beta.2
   flutter_downloader: ^1.11.8
   path_provider: ^2.1.5
+  flutter_file_dialog: ^3.0.2
 
 icons_launcher:
   image_path: "assets/images/logo.png"
