@@ -28,14 +28,14 @@ Future<void> main() async {
     initialUrl = "${Env.appurl}$notificationPayload";
   }
 
-  await FirebaseService().initialize(); // What happens if there is no internet connection?
+  await FirebaseService()
+      .initialize();
 
   await NotificationService().requestPermissions();
 
   await FlutterDownloader.initialize(
-      debug: true,
-      // optional: set to false to disable printing logs to console (default: true)
-      );
+    debug: false,
+  );
 
   runApp(WebViewPage(initialUrl: initialUrl));
 }
